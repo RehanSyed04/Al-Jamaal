@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — Aljamaal Official</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <div class="logo-text">Al<span>jamaal</span></div>
+      </a>
+      <div class="navbar-links">
+        <a href="index.html">Home</a>
+        <a href="products.html">Products</a>
+        <a href="about.html">About Us</a>
+        <a href="contact.html">Contact</a>
+        <a href="cart.html" class="cart-link">
+          🛒
+          <span class="cart-badge" style="display:none;">0</span>
+        </a>
+      </div>
+      <button class="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Page Hero -->
+  <div class="page-hero">
+    <span class="label">Almost There</span>
+    <h1>Checkout</h1>
+  </div>
+
+  <!-- Checkout Section -->
+  <section>
+    <div class="container">
+      <div class="checkout-layout">
+
+        <!-- Customer Details Form -->
+        <div class="checkout-form-section">
+          <h2>Shipping Details</h2>
+
+          <!--
+            HOW PAYFAST WORKS:
+            This form collects customer info, then sends the order to PayFast
+            for secure payment processing.
+
+            BEFORE GOING LIVE, your client needs to:
+            1. Register at payfast.co.za (free)
+            2. Get their Merchant ID and Merchant Key
+            3. Replace the values in the hidden inputs below
+            4. Change the action URL from sandbox to live:
+               SANDBOX:  https://sandbox.payfast.co.za/eng/process
+               LIVE:     https://www.payfast.co.za/eng/process
+          -->
+          <form
+            id="checkout-form"
+            action="https://sandbox.payfast.co.za/eng/process"
+            method="POST"
+            onsubmit="return preparePayFastForm()"
+          >
+
+            <!-- PayFast hidden fields -->
+            <!-- REPLACE these with your client's real Merchant ID and Key from payfast.co.za -->
+            <input type="hidden" name="merchant_id" value="10000100">
+            <input type="hidden" name="merchant_key" value="46f0cd694581a">
+            <input type="hidden" name="return_url" value="https://YOURSITE.disent.com/thankyou.html">
+            <input type="hidden" name="cancel_url" value="https://YOURSITE.disent.com/cart.html">
+            <input type="hidden" name="notify_url" value="">
+            <input type="hidden" name="item_name" value="Aljamaal Official Order">
+            <input type="hidden" name="amount" id="payfast-amount" value="0.00">
+            <input type="hidden" name="currency" value="ZAR">
+
+            <!-- Customer name fields (sent to PayFast) -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="name_first" placeholder="First name" required>
+              </div>
+              <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="name_last" placeholder="Last name" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email_address">Email Address</label>
+              <input type="email" id="email_address" name="email_address" placeholder="your@email.com" required>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" name="cell_number" placeholder="+27 00 000 0000">
+            </div>
+
+            <h2 style="margin-top: 32px;">Delivery Address</h2>
+
+            <div class="form-group">
+              <label for="address">Street Address</label>
+              <input type="text" id="address" name="custom_str1" placeholder="123 Example Street" required>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" id="city" name="custom_str2" placeholder="Cape Town" required>
+              </div>
+              <div class="form-group">
+                <label for="postal_code">Postal Code</label>
+                <input type="text" id="postal_code" name="custom_str3" placeholder="8001" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="province">Province</label>
+              <select id="province" name="custom_str4">
+                <option value="">Select a province</option>
+                <option>Gauteng</option>
+                <option>Western Cape</option>
+                <option>KwaZulu-Natal</option>
+                <option>Eastern Cape</option>
+                <option>Limpopo</option>
+                <option>Mpumalanga</option>
+                <option>North West</option>
+                <option>Free State</option>
+                <option>Northern Cape</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="order_notes">Order Notes (optional)</label>
+              <textarea id="order_notes" name="custom_str5" placeholder="Any special instructions for your order..."></textarea>
+            </div>
+
+            <!-- Payment button — submits to PayFast -->
+            <button type="submit" class="btn btn-primary" style="width:100%; font-size:16px; padding:16px;">
+              Pay Securely with PayFast →
+            </button>
+
+            <p style="font-size:12px; color:#888; text-align:center; margin-top:12px;">
+              You will be redirected to PayFast to complete your payment securely.
+              We accept credit/debit cards, EFT, SnapScan, and more.
+            </p>
+
+          </form>
+        </div>
+
+        <!-- Order Summary Sidebar -->
+        <div class="order-summary-box">
+          <h3>Order Summary</h3>
+
+          <!-- Order items loaded by script.js -->
+          <div id="checkout-order-items"></div>
+
+          <div class="summary-row" style="margin-top:16px; padding-top:16px; border-top:1px solid #E8E2D7;">
+            <span>Subtotal</span>
+            <span id="checkout-total">R 0.00</span>
+          </div>
+          <div class="summary-row">
+            <span>Shipping</span>
+            <span>Calculated by seller</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total (ZAR)</span>
+            <span id="checkout-grand-total">R 0.00</span>
+          </div>
+
+          <div class="payfast-section">
+            <p>Powered by</p>
+            <div class="payfast-logos">
+              <span>VISA</span> &bull;
+              <span>Mastercard</span> &bull;
+              <span>EFT</span> &bull;
+              <span>SnapScan</span>
+            </div>
+            <p style="font-size:11px;">256-bit SSL encrypted &amp; secure</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <p class="brand-name">Al<span>jamaal</span></p>
+          <p class="tagline">Timeless South African Fashion</p>
+          <p>A family-owned clothing brand celebrating modest, elegant fashion rooted in South African heritage.</p>
+          <div class="social-links">
+            <a href="https://www.instagram.com/aljamaal_official/" target="_blank" rel="noopener" aria-label="Instagram">📷</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="products.html">Products</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Categories</h4>
+          <ul>
+            <li><a href="products.html">Men</a></li>
+            <li><a href="products.html">Women</a></li>
+            <li><a href="products.html">Kids</a></li>
+            <li><a href="products.html">Accessories</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <address>
+            South Africa<br>
+            <a href="mailto:info@aljamaal.co.za" style="color:#888;">info@aljamaal.co.za</a><br><br>
+            <a href="https://wa.me/27000000000" style="color:#888;">WhatsApp Us</a>
+          </address>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Aljamaal Official. All rights reserved.</p>
+        <p>South Africa 🇿🇦</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/products-data.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    /**
+     * Before submitting the PayFast form, update the amount field
+     * with the current cart total so it matches what the customer sees.
+     */
+    function preparePayFastForm() {
+      const total = CartManager.getTotal();
+      if (total <= 0) {
+        alert('Your cart is empty. Please add items before checking out.');
+        window.location.href = 'products.html';
+        return false;
+      }
+      document.getElementById('payfast-amount').value = total.toFixed(2);
+
+      // Also update the grand total display
+      const grandTotalEl = document.getElementById('checkout-grand-total');
+      if (grandTotalEl) grandTotalEl.textContent = `R ${total.toFixed(2)}`;
+
+      // Clear the cart after redirecting to PayFast
+      // (PayFast will redirect to return_url after payment)
+      CartManager.clear();
+      return true; // allow form to submit
+    }
+  </script>
+
+</body>
+</html>

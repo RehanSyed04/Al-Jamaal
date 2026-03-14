@@ -1,0 +1,20 @@
+# Mac system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code settings (optional — remove this if you want to share VS Code settings)
+.vscode/
+
+# Log files
+*.log
+
+# Node (if you ever use npm tools)
+node_modules/
