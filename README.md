@@ -1,3 +1,3 @@
 # Al-Jamaal
 
-https://rehansyed001-droid.github.io/Al-Jamaal/
+https://rehansyed04.github.io/Al-Jamaal/
