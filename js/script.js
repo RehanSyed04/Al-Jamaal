@@ -302,7 +302,7 @@ function renderCart() {
     <tr>
       <td>
         <div class="cart-item-info">
-          <div class="cart-item-img img-placeholder" style="min-width:70px;height:85px;">
+          <div class="cart-item-img img-placeholder" style="width:70px;min-width:70px;height:85px;">
             <span style="font-size:10px;text-align:center;">Photo</span>
           </div>
           <div>
@@ -417,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Home page: render 4 featured products
   if (document.getElementById('featured-products')) {
     renderProductGrid('featured-products', products.slice(0, 4));
+    initCardSliderTouch(document.getElementById('featured-products'));
   }
 
   // Products page: render all products + init filter

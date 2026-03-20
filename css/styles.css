@@ -1027,24 +1027,23 @@ section {
 
 /* ── Card Slider (products grid) ──────────────────────── */
 .card-slider {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-.card-slider .slide {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+  overflow: hidden;
+}
+.card-slider .slide {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 .card-slider .slide.active {
-  opacity: 1;
-  pointer-events: auto;
+  display: block;
 }
 .card-slider-btn {
   position: absolute;
