@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Product — Aljamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=2">
 </head>
 
 <body>
@@ -225,25 +225,50 @@
     // Image slider controls
     let currentSlide = 0;
     function moveSlide(dir) {
-      const slides = document.querySelectorAll('.slide');
-      const dots = document.querySelectorAll('.dot');
+      const slides = document.querySelectorAll('.img-slider .slide');
+      const dots = document.querySelectorAll('.img-slider .dot');
       if (!slides.length) return;
       slides[currentSlide].classList.remove('active');
-      dots[currentSlide].classList.remove('active');
+      if (dots[currentSlide]) dots[currentSlide].classList.remove('active');
       currentSlide = (currentSlide + dir + slides.length) % slides.length;
       slides[currentSlide].classList.add('active');
-      dots[currentSlide].classList.add('active');
+      if (dots[currentSlide]) dots[currentSlide].classList.add('active');
     }
     function goToSlide(index) {
-      const slides = document.querySelectorAll('.slide');
-      const dots = document.querySelectorAll('.dot');
+      const slides = document.querySelectorAll('.img-slider .slide');
+      const dots = document.querySelectorAll('.img-slider .dot');
       if (!slides.length) return;
       slides[currentSlide].classList.remove('active');
-      dots[currentSlide].classList.remove('active');
+      if (dots[currentSlide]) dots[currentSlide].classList.remove('active');
       currentSlide = index;
       slides[currentSlide].classList.add('active');
-      dots[currentSlide].classList.add('active');
+      if (dots[currentSlide]) dots[currentSlide].classList.add('active');
     }
+
+    // Touch/swipe support for the detail image slider
+    (function () {
+      let touchStartX = 0;
+      document.addEventListener('touchstart', e => {
+        if (e.target.closest('.img-slider')) touchStartX = e.touches[0].clientX;
+      }, { passive: true });
+      document.addEventListener('touchend', e => {
+        if (!e.target.closest('.img-slider')) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) moveSlide(dx < 0 ? 1 : -1);
+      }, { passive: true });
+    })();
+
+    // Also init touch for the related products card sliders once rendered
+    (function waitForRelated() {
+      const grid = document.getElementById('related-products');
+      if (grid) {
+        const observer = new MutationObserver(() => {
+          if (typeof initCardSliderTouch === 'function') initCardSliderTouch(grid);
+          observer.disconnect();
+        });
+        observer.observe(grid, { childList: true });
+      }
+    })();
   </script>
 
 </body>
