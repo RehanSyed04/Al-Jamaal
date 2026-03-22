@@ -102,22 +102,24 @@ const products = [
 
   // ── KIDS ───────────────────────────────────────────────
   {
+    id: 11,
+    name: "Kids Shorts",
+    category: "Kids",
+    price: 0,
+    image: "images/KShortsM.jpg",
+    images: ["images/KShortsM.jpg", "images/KShortsS1.jpg", "images/KShortsS2.jpg", "images/KShortsS3.jpg", "images/KShortsS4.jpg"],
+    badge: "",
+    description: "Lightweight and comfortable shorts designed for toddlers aged 1 to 2."
+  },
+  {
     id: 10,
     name: "Toddler Burnoose",
     category: "Kids",
     price: 0,
-    image: "images/placeholder.jpg",
+    image: "images/KBurnooseM.png",
+    images: ["images/KBurnooseM.png", "images/KBurnooseS1.png", "images/KBurnooseS2.png", "images/KBurnooseS3.jpg", "images/KBurnooseS4.png", "images/KBurnooseS5.png", "images/KBurnooseS6.png"],
     badge: "",
     description: "A mini version of our signature burnoose, made just for little ones."
-  },
-  {
-    id: 11,
-    name: "Kids Shorts (Ages 1–2)",
-    category: "Kids",
-    price: 0,
-    image: "images/placeholder.jpg",
-    badge: "",
-    description: "Lightweight and comfortable shorts designed for toddlers aged 1 to 2."
   },
   {
     id: 12,
