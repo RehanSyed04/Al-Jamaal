@@ -462,6 +462,15 @@ function initSTT() {
   document.body.appendChild(btn);
 
 
+  // Show after scrolling 300px, hide when back at top
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  }, { passive: true });
+
   // Smooth scroll to top on click
   btn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

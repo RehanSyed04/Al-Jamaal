@@ -109,23 +109,28 @@
 
             <div class="form-group">
               <label for="address">Street Address</label>
-              <input type="text" id="address" name="custom_str1" placeholder="123 Example Street" required>
+              <input type="text" id="address" name="custom_str1" placeholder="123 Example Street" required oninput="onAddressChange()">
+            </div>
+
+            <div class="form-group">
+              <label for="suburb">Suburb</label>
+              <input type="text" id="suburb" placeholder="Sandton" required oninput="onAddressChange()">
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label for="city">City</label>
-                <input type="text" id="city" name="custom_str2" placeholder="Cape Town" required>
+                <input type="text" id="city" name="custom_str2" placeholder="Cape Town" required oninput="onAddressChange()">
               </div>
               <div class="form-group">
                 <label for="postal_code">Postal Code</label>
-                <input type="text" id="postal_code" name="custom_str3" placeholder="8001" required>
+                <input type="text" id="postal_code" name="custom_str3" placeholder="8001" required pattern="[0-9]{4}" maxlength="4" title="Please enter a valid 4-digit South African postal code" oninput="onAddressChange()">
               </div>
             </div>
 
             <div class="form-group">
               <label for="province">Province</label>
-              <select id="province" name="custom_str4">
+              <select id="province" name="custom_str4" required onchange="onAddressChange()">
                 <option value="">Select a province</option>
                 <option>Gauteng</option>
                 <option>Western Cape</option>
@@ -139,7 +144,19 @@
               </select>
             </div>
 
-            <div class="form-group">
+            <!-- Shipping Options — appear automatically once address is filled -->
+            <div id="shipping-section" style="display:none; margin-top:24px;">
+              <h2>Shipping Method</h2>
+              <div id="shipping-loading" style="display:none; color:#888; font-size:14px; padding:12px 0;">
+                Calculating shipping rates...
+              </div>
+              <div id="shipping-options"></div>
+              <p id="shipping-error" style="display:none; color:#C0392B; font-size:13px; margin-top:8px;">
+                Could not calculate shipping. Please check your address and try again.
+              </p>
+            </div>
+
+            <div class="form-group" style="margin-top:24px;">
               <label for="order_notes">Order Notes (optional)</label>
               <textarea id="order_notes" name="custom_str5" placeholder="Any special instructions for your order..."></textarea>
             </div>
@@ -165,11 +182,8 @@
           </div>
           <div class="summary-row">
             <span>Shipping</span>
-            <span>Calculated by seller</span>
+            <span id="checkout-shipping-cost">Enter address</span>
           </div>
-          <p style="font-size:12px; color:#888; margin: 4px 0 12px; line-height:1.6;">
-            Shipping costs will be confirmed by the seller after your order. We will contact you with delivery details.
-          </p>
           <div class="summary-row total">
             <span>Total (ZAR)</span>
             <span id="checkout-grand-total">R 0.00</span>
@@ -222,10 +236,10 @@
         <div class="footer-col">
           <h4>Categories</h4>
           <ul>
-            <li><a href="products.html">Men</a></li>
-            <li><a href="products.html">Women</a></li>
-            <li><a href="products.html">Kids</a></li>
-            <li><a href="products.html">Home</a></li>
+            <li><a href="products.html?category=Men">Men</a></li>
+            <li><a href="products.html?category=Women">Women</a></li>
+            <li><a href="products.html?category=Kids">Kids</a></li>
+            <li><a href="products.html?category=Home">Home</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -239,7 +253,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2025 Aljamaal Official. All rights reserved.</p>
+        <p>&copy; 2026 Aljamaal Official. All rights reserved.</p>
         <p>South Africa 🇿🇦</p>
       </div>
     </div>
@@ -248,19 +262,143 @@
   <script src="js/products-data.js"></script>
   <script src="js/script.js"></script>
   <script>
-    /**
-     * Before submitting the PayFast form, update the amount field
-     * with the current cart total so it matches what the customer sees.
-     */
+    const WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
+
+    // Parcel size categories by product ID
+    const SMALL_IDS  = [3, 7, 11, 12];
+    const MEDIUM_IDS = [5, 6, 8, 13];
+    const PARCEL_SIZES = {
+      small:  { submitted_length_cm: 30, submitted_width_cm: 20, submitted_height_cm: 5,  submitted_weight_kg: 0.5 },
+      medium: { submitted_length_cm: 40, submitted_width_cm: 30, submitted_height_cm: 8,  submitted_weight_kg: 1.0 },
+      large:  { submitted_length_cm: 50, submitted_width_cm: 40, submitted_height_cm: 10, submitted_weight_kg: 1.5 }
+    };
+
+    let selectedShipping = null;
+    let shippingDebounceTimer = null;
+
+    function getParcelSizeKey(productId) {
+      if (SMALL_IDS.includes(productId))  return 'small';
+      if (MEDIUM_IDS.includes(productId)) return 'medium';
+      return 'large';
+    }
+
+    function buildParcels() {
+      const cart = CartManager.getCart();
+      const parcels = [];
+      cart.forEach(item => {
+        const sizeKey = getParcelSizeKey(item.id);
+        for (let i = 0; i < item.qty; i++) {
+          parcels.push({ ...PARCEL_SIZES[sizeKey] });
+        }
+      });
+      return parcels;
+    }
+
+    function getDeliveryAddress() {
+      return {
+        type: 'residential',
+        street_address: document.getElementById('address').value.trim(),
+        local_area: document.getElementById('suburb').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        zone: document.getElementById('province').value,
+        country: 'ZA',
+        code: document.getElementById('postal_code').value.trim()
+      };
+    }
+
+    function onAddressChange() {
+      const addr = getDeliveryAddress();
+      if (!addr.street_address || !addr.local_area || !addr.city || !addr.code || !addr.zone) return;
+      clearTimeout(shippingDebounceTimer);
+      shippingDebounceTimer = setTimeout(fetchShippingRates, 900);
+    }
+
+    async function fetchShippingRates() {
+      const addr = getDeliveryAddress();
+      const shippingSection  = document.getElementById('shipping-section');
+      const shippingLoading  = document.getElementById('shipping-loading');
+      const shippingOptions  = document.getElementById('shipping-options');
+      const shippingError    = document.getElementById('shipping-error');
+
+      shippingSection.style.display = 'block';
+      shippingLoading.style.display = 'block';
+      shippingOptions.innerHTML = '';
+      shippingError.style.display = 'none';
+      selectedShipping = null;
+      updateOrderTotals();
+
+      try {
+        const res = await fetch(`${WORKER_URL}/rates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ delivery_address: addr, parcels: buildParcels() })
+        });
+        const data = await res.json();
+        shippingLoading.style.display = 'none';
+
+        const rates = data.rates;
+        if (!Array.isArray(rates) || rates.length === 0) {
+          shippingError.style.display = 'block';
+          return;
+        }
+
+        shippingOptions.innerHTML = rates.map(opt => {
+          const sl = opt.service_level;
+          const desc = sl.description || (sl.delivery_date_from
+            ? 'Delivery from ' + new Date(sl.delivery_date_from).toLocaleDateString('en-ZA', { weekday:'short', month:'short', day:'numeric' })
+            : '');
+          return `
+            <div class="shipping-option" onclick="selectShipping(this, '${sl.code}', ${opt.rate}, '${sl.name}')">
+              <div class="shipping-option-info">
+                <strong>${sl.name}</strong>
+                <span>${desc}</span>
+              </div>
+              <div class="shipping-option-price">R ${parseFloat(opt.rate).toFixed(2)}</div>
+            </div>`;
+        }).join('');
+
+      } catch (err) {
+        shippingLoading.style.display = 'none';
+        shippingError.style.display = 'block';
+      }
+    }
+
+    function selectShipping(el, code, rate, name) {
+      document.querySelectorAll('.shipping-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedShipping = { code, rate, name };
+      updateOrderTotals();
+    }
+
+    function updateOrderTotals() {
+      const cartTotal    = CartManager.getTotal();
+      const shippingCost = selectedShipping ? parseFloat(selectedShipping.rate) : 0;
+      const grandTotal   = cartTotal + shippingCost;
+
+      const shippingEl  = document.getElementById('checkout-shipping-cost');
+      const grandTotalEl = document.getElementById('checkout-grand-total');
+      const payfastEl   = document.getElementById('payfast-amount');
+
+      if (shippingEl)   shippingEl.textContent  = selectedShipping ? `R ${shippingCost.toFixed(2)}` : 'Select shipping';
+      if (grandTotalEl) grandTotalEl.textContent = `R ${grandTotal.toFixed(2)}`;
+      if (payfastEl)    payfastEl.value          = grandTotal.toFixed(2);
+    }
+
     function preparePayFastForm() {
-      const total = CartManager.getTotal();
-      if (total <= 0) {
+      const cartTotal = CartManager.getTotal();
+      if (cartTotal <= 0) {
         alert('Your cart is empty. Please add items before checking out.');
         window.location.href = 'products.html';
         return false;
       }
 
-      // Phone validation — required but accepts any country
+      if (!selectedShipping) {
+        alert('Please select a shipping method before proceeding.');
+        document.getElementById('shipping-section').scrollIntoView({ behavior: 'smooth' });
+        return false;
+      }
+
+      // Phone validation
       const phoneInput = document.getElementById('phone');
       const phoneError = document.getElementById('phone-error');
       const raw = phoneInput.value.replace(/[\s\-\(\)]/g, '');
@@ -271,53 +409,57 @@
       }
       phoneError.style.display = 'none';
 
-      // Normalize SA numbers for PayFast; for non-SA, save to notes and clear field
       const saPattern = /^(\+27|27|0)[6-8][0-9]{8}$/;
       if (saPattern.test(raw)) {
         const digits = raw.replace(/^\+?27|^0/, '');
         phoneInput.value = '+27' + digits;
       } else {
-        // Store non-SA number in order notes so we still have it
         const notesEl = document.getElementById('order_notes');
         if (notesEl && !notesEl.value.includes('Phone:')) {
           notesEl.value = (notesEl.value ? notesEl.value + '\n' : '') + 'Phone: ' + phoneInput.value;
         }
-        phoneInput.value = ''; // clear so PayFast doesn't reject it
+        phoneInput.value = '';
       }
 
-      document.getElementById('payfast-amount').value = total.toFixed(2);
+      // Save order details to localStorage for thankyou.html to create the TCG shipment
+      localStorage.setItem('aljamaal_last_order', JSON.stringify({
+        delivery_address: getDeliveryAddress(),
+        delivery_contact: {
+          name:          document.getElementById('first_name').value + ' ' + document.getElementById('last_name').value,
+          mobile_number: document.getElementById('phone').value,
+          email:         document.getElementById('email_address').value
+        },
+        parcels:          buildParcels(),
+        shipping:         selectedShipping,
+        subtotal:         cartTotal,
+        grand_total:      cartTotal + parseFloat(selectedShipping.rate)
+      }));
 
-      const grandTotalEl = document.getElementById('checkout-grand-total');
-      if (grandTotalEl) grandTotalEl.textContent = `R ${total.toFixed(2)}`;
-
-      return true; // allow form to submit — cart cleared on thankyou.html
+      updateOrderTotals();
+      return true;
     }
 
-    // Auto-format phone number as user types
     function formatPhone(input) {
       let val = input.value.replace(/[^\d\+]/g, '');
-
-      // SA: starts with 0 → format as 0XX XXX XXXX
       if (/^0\d*/.test(val)) {
         val = val.slice(0, 10);
         if (val.length > 6) val = val.slice(0,3) + ' ' + val.slice(3,6) + ' ' + val.slice(6);
         else if (val.length > 3) val = val.slice(0,3) + ' ' + val.slice(3);
-
-      // SA: starts with 27 or +27 → format as +27 XX XXX XXXX
       } else if (/^\+?27\d*/.test(val)) {
         val = val.replace(/^\+?/, '+');
         const digits = val.replace(/^\+27/, '');
         const grouped = digits.slice(0,2) + (digits.length > 2 ? ' ' + digits.slice(2,5) : '') + (digits.length > 5 ? ' ' + digits.slice(5,9) : '');
         val = '+27 ' + grouped;
-
-      // International: starts with + → keep + and digits, add space after country code guess
       } else if (val.startsWith('+')) {
-        // Just keep it clean, don't over-format unknown country codes
         val = '+' + val.slice(1).replace(/\D/g, '');
       }
-
       input.value = val;
     }
+
+    // Init grand total on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateOrderTotals();
+    });
   </script>
 
 </body>

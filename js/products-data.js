@@ -63,7 +63,7 @@ const products = [
     image: "images/KLLJ.jpg",
     images: ["images/KLLJ.jpg"],
     badge: "",
-    description: "A lightweight, waterproof and windproof ladies burnoose — modest, elegant, and built for any weather."
+    description: "The Khareef Ladies Long Jacket by Al-Jamaal. A sleek, long-line outer layer crafted from smooth, wind and water resistant fabric. Modest in coverage, refined in style, and tailored to move with you. Featuring a hooded design and side pockets, it's the versatile winter essential every wardrobe needs."
   },
   {
     id: 5,
