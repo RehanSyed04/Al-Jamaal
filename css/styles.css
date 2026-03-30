@@ -103,6 +103,15 @@ ul { list-style: none; }
   color: var(--dark);
 }
 
+.btn-secondary {
+  background-color: #E8E2D7;
+  color: var(--dark);
+}
+.btn-secondary:hover {
+  background-color: #d4cdc0;
+  color: var(--dark);
+}
+
 .btn-sm {
   padding: 8px 20px;
   font-size: 12px;
