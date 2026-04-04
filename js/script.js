@@ -418,7 +418,7 @@ function initContactForm() {
   if (!form) return;
 
   // Init EmailJS with public key
-  emailjs.init('o-YDiH_3VbgTRUFSS');
+  emailjs.init('7SF-nob6cWJgKT8d1');
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -435,7 +435,8 @@ function initContactForm() {
       message: form.message.value
     };
 
-    emailjs.send('service_vrgg8w8', 'template_pjhca3u', params)
+    // Send contact notification to business (auto-reply handled by linked template)
+    emailjs.send('service_c0nsybo', 'template_ysskhq2', params)
       .then(() => {
         showToast('Message sent! We will get back to you soon.');
         form.reset();
