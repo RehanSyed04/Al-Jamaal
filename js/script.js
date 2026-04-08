@@ -312,18 +312,20 @@ function renderCart() {
   if (cartContent) cartContent.style.display = 'grid';
   if (emptyMsg) emptyMsg.style.display = 'none';
 
-  tableBody.innerHTML = cart.map(item => `
+  tableBody.innerHTML = cart.map(item => {
+    const safeId = String(item.id).replace(/"/g, '&quot;');
+    return `
     <tr>
       <td>
         <div class="cart-item-info">
-          <a href="product.html?id=${item.id}">
+          <a href="product.html?id=${safeId}">
             ${item.image
               ? `<img src="${item.image}" alt="${item.name}" style="width:70px;min-width:70px;height:85px;object-fit:cover;border-radius:6px;">`
               : `<div class="cart-item-img img-placeholder" style="width:70px;min-width:70px;height:85px;"><span style="font-size:10px;text-align:center;">Photo</span></div>`
             }
           </a>
           <div>
-            <a href="product.html?id=${item.id}" style="text-decoration:none; color:inherit;">
+            <a href="product.html?id=${safeId}" style="text-decoration:none; color:inherit;">
               <p class="cart-item-name">${item.name}</p>
             </a>
             <p class="cart-item-cat">${item.category}</p>
@@ -333,17 +335,18 @@ function renderCart() {
       <td>R ${item.price.toFixed(2)}</td>
       <td>
         <div class="qty-control">
-          <button onclick="changeQty('${item.id}', -1)">&#8722;</button>
+          <button onclick="changeQty('${safeId}', -1)">&#8722;</button>
           <span>${item.qty}</span>
-          <button onclick="changeQty('${item.id}', 1)">&#43;</button>
+          <button onclick="changeQty('${safeId}', 1)">&#43;</button>
         </div>
       </td>
       <td>R ${(item.price * item.qty).toFixed(2)}</td>
       <td>
-        <button class="remove-btn" onclick="removeFromCart('${item.id}')" title="Remove item">&#10005;</button>
+        <button class="remove-btn" onclick="removeFromCart('${safeId}')" title="Remove item">&#10005;</button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   updateCartSummary();
 }
