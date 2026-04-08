@@ -1246,6 +1246,31 @@ section {
   color: var(--dark);
 }
 
+/* ── Size Button Selector (dual: Length + Chest) ─────────── */
+.size-btn {
+  padding: 8px 14px;
+  border: 1px solid #E8E2D7;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--dark);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.size-btn:hover {
+  border-color: #8B7355;
+  color: #8B7355;
+}
+.size-btn.active {
+  background: #8B7355;
+  border-color: #8B7355;
+  color: #fff;
+}
+.size-btn.unavailable {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* ============================================================
    RESPONSIVE — TABLET (max 1024px)
    ============================================================ */

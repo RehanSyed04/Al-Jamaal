@@ -110,9 +110,11 @@
     </div>
   </footer>
 
-  <script src="js/products-data.js?v=15"></script>
+  <script src="js/products-data.js?v=16"></script>
   <script src="js/script.js"></script>
   <script>
+    const dualSelectorIds = [1, 2, 3, 10, 11];
+
     // Get the product id from the URL, e.g. product.html?id=3
     const params = new URLSearchParams(window.location.search);
     const productId = parseInt(params.get('id'));
@@ -157,11 +159,29 @@
         sliderHTML = `<div class="img-placeholder" style="height:100%;"><span>Photo<br>Coming Soon</span></div>`;
       }
 
+      // Custom order note — shown on all products
+      const customOrderNote = product.id === 1
+        ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Need a size larger than 2X-Large? We\'d love to accommodate you \u2014 <a href="contact.html" style="color:#8B7355;font-weight:600;">contact us</a> for a custom order.</div>'
+        : '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Interested in a custom order? Use our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll be happy to assist.</div>';
+
+      // Color selector for Original Burnoose
+      const colorHTML = product.id === 1
+        ? '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Colour</label><select id="detail-color" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a colour</option><option value="Black">Black</option><option value="Maroon">Maroon</option><option value="Camel">Camel</option><option value="Light Grey">Light Grey</option><option value="Navy Blue">Navy Blue</option></select></div>'
+        : '';
+
+      const colorNote = product.id === 1
+        ? '<p style="font-size:12px;color:#999;margin:-12px 0 20px;line-height:1.6;">Our photos may feature colours from past seasons. Only the colours listed above are currently available.</p>'
+        : '';
+
       // Build size selector HTML separately to avoid nested template literal issues
       let sizeHTML = '';
       if (product.sizes) {
-        const options = product.sizes.map(s => '<option value="' + s.size + '" data-price="' + s.price + '">' + s.size + ' \u2014 R ' + s.price.toFixed(2) + '</option>').join('');
-        sizeHTML = '<div style="margin-bottom:20px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Size</label><select id="detail-size" onchange="updateSizePrice()" style="padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;min-width:160px;"><option value="">Select a size</option>' + options + '</select></div>';
+        if (dualSelectorIds.includes(product.id)) {
+          sizeHTML = buildDualSizeSelector(product.sizes, product.sizeLabels);
+        } else {
+          const options = product.sizes.map(s => '<option value="' + s.size + '" data-price="' + s.price + '">' + s.size + ' \u2014 R ' + s.price.toFixed(2) + '</option>').join('');
+          sizeHTML = '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Size</label><select id="detail-size" onchange="updateSizePrice()" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a size</option>' + options + '</select></div>';
+        }
       }
 
       const priceText = product.sizes
@@ -180,7 +200,11 @@
           <p class="product-detail-price" id="product-detail-price">${priceText}</p>
           <p class="product-detail-desc">${product.description}</p>
 
-          ${sizeHTML}
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+            ${sizeHTML}
+            ${colorHTML}
+          </div>
+          ${colorNote}
 
           <div class="product-detail-qty">
             <label>Quantity</label>
@@ -191,9 +215,13 @@
             </div>
           </div>
 
+          ${customOrderNote}
+
           <div class="product-detail-actions">
             ${product.badge === 'Sold Out'
               ? `<button class="btn btn-primary" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled>Sold Out</button>`
+              : product.price === 0
+              ? `<a href="contact.html" class="btn btn-primary" style="flex:1;text-align:center;">Contact Us for Pricing</a>`
               : `<button class="btn btn-primary" style="flex:1;" onclick="addDetailToCart()">Add to Cart</button>`
             }
             <a href="cart.html" class="btn btn-dark" style="flex:1; text-align:center;">
@@ -241,36 +269,156 @@
       if (opt && opt.dataset.price) priceEl.textContent = 'R ' + parseFloat(opt.dataset.price).toFixed(2);
     }
 
-    function addDetailToCart() {
-      const qty = parseInt(document.getElementById('detail-qty').textContent);
+    // ── Dual size selector ────────────────────────────────────
+    function buildDualSizeSelector(sizes, labels) {
+      var label1 = (labels && labels[0]) ? labels[0].toUpperCase() : 'LENGTH';
+      window._selectedLength = null;
+      window._selectedChest = null;
 
-      let cartId = product.id;
-      let cartName = product.name;
-      let cartPrice = product.price;
+      // Single-label mode: one row of buttons, no second dropdown
+      if (!labels || labels.length === 1) {
+        window._singleSizes = sizes;
+        var btns = sizes.map(function(s, i) {
+          return '<button type="button" class="size-btn" data-idx="' + i + '" onclick="selectSingleSize(' + i + ')" style="width:100%;text-align:center;">' + s.size + '</button>';
+        }).join('');
+        return '<div style="flex:0 0 100%;width:100%;">' +
+          '<div style="margin-bottom:16px;padding:16px;border:1px solid #E8E2D7;background:#FAF8F5;">' +
+            '<div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;color:#555;">SELECT ' + label1 + ': <span id="selected-length-label" style="font-weight:600;letter-spacing:0;text-transform:none;color:#8B7355;"></span></div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + btns + '</div>' +
+          '</div>' +
+        '</div>';
+      }
 
-      if (product.sizes) {
-        const select = document.getElementById('detail-size');
-        if (!select.value) {
-          alert('Please select a size.');
-          select.focus();
-          return;
+      var label2 = labels[1].toUpperCase();
+      var sizeData = {};
+      sizes.forEach(function(s) {
+        var match = s.size.match(/^(\S+)\s+(.+)$/);
+        if (match) {
+          var len = match[1], chest = match[2];
+          if (!sizeData[len]) sizeData[len] = {};
+          sizeData[len][chest] = s.price;
+        } else {
+          sizeData[s.size] = { _standalone: s.price };
         }
-        const opt = select.options[select.selectedIndex];
-        cartId = product.id + '-' + select.value;
-        cartName = product.name + ' (Size ' + select.value + ')';
-        cartPrice = parseFloat(opt.dataset.price);
-      }
+      });
+      window._burnooseSizeData = sizeData;
 
-      const cart = CartManager.getCart();
-      const existing = cart.find(item => String(item.id) === String(cartId));
-      if (existing) {
-        existing.qty += qty;
+      var lengthBtns = Object.keys(sizeData).map(function(len) {
+        return '<button type="button" class="size-btn" data-length="' + len + '" onclick="selectLength(\'' + len + '\')">' + len + '</button>';
+      }).join('');
+
+      return '<div style="flex:0 0 100%;width:100%;">' +
+        '<div style="margin-bottom:16px;padding:16px;border:1px solid #E8E2D7;background:#FAF8F5;">' +
+          '<div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;color:#555;">SELECT ' + label1 + ': <span id="selected-length-label" style="font-weight:600;letter-spacing:0;text-transform:none;color:#8B7355;"></span></div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + lengthBtns + '</div>' +
+        '</div>' +
+        '<div id="chest-section" style="display:none;margin-bottom:16px;padding:16px;border:1px solid #E8E2D7;background:#FAF8F5;">' +
+          '<div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;color:#555;">SELECT ' + label2 + ': <span id="selected-chest-label" style="font-weight:600;letter-spacing:0;text-transform:none;color:#8B7355;"></span></div>' +
+          '<div id="chest-buttons" style="display:flex;flex-wrap:wrap;gap:8px;"></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function selectSingleSize(idx) {
+      var s = window._singleSizes[idx];
+      window._selectedLength = s.size;
+      window._selectedChest = null;
+      document.querySelectorAll('.size-btn[data-idx]').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('.size-btn[data-idx="' + idx + '"]').classList.add('active');
+      document.getElementById('selected-length-label').textContent = s.size;
+      document.getElementById('product-detail-price').textContent = 'R ' + s.price.toFixed(2);
+    }
+
+    function selectLength(len) {
+      document.querySelectorAll('.size-btn[data-length]').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('.size-btn[data-length="' + len + '"]').classList.add('active');
+      document.getElementById('selected-length-label').textContent = len;
+
+      window._selectedLength = len;
+      window._selectedChest = null;
+      var chestLabelEl = document.getElementById('selected-chest-label');
+      if (chestLabelEl) chestLabelEl.textContent = '';
+
+      var data = window._burnooseSizeData[len];
+      var priceEl = document.getElementById('product-detail-price');
+
+      if (data._standalone !== undefined) {
+        document.getElementById('chest-section').style.display = 'none';
+        priceEl.textContent = 'R ' + data._standalone.toFixed(2);
       } else {
-        cart.push({ id: cartId, name: cartName, category: product.category, price: cartPrice, image: product.image, qty: qty });
+        var chestBtns = Object.keys(data).map(function(chest) {
+          return '<button type="button" class="size-btn" data-chest="' + chest + '" onclick="selectChest(\'' + chest + '\')">' + chest + '</button>';
+        }).join('');
+        document.getElementById('chest-buttons').innerHTML = chestBtns;
+        document.getElementById('chest-section').style.display = 'block';
+        var minPrice = Math.min.apply(null, Object.values(data));
+        priceEl.textContent = 'From R ' + minPrice.toFixed(2);
       }
-      CartManager.saveCart(cart);
-      updateCartBadge();
-      showToast(qty > 1 ? `${qty} × "${cartName}" added to cart` : `"${cartName}" added to cart`);
+    }
+
+    function selectChest(chest) {
+      document.querySelectorAll('.size-btn[data-chest]').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('.size-btn[data-chest="' + chest + '"]').classList.add('active');
+      document.getElementById('selected-chest-label').textContent = chest;
+
+      window._selectedChest = chest;
+      var price = window._burnooseSizeData[window._selectedLength][chest];
+      document.getElementById('product-detail-price').textContent = 'R ' + price.toFixed(2);
+    }
+
+    function addDetailToCart() {
+      try {
+        const qty = parseInt(document.getElementById('detail-qty').textContent) || 1;
+        let cartId = String(product.id);
+        let cartName = product.name;
+        let cartPrice = product.price;
+
+        // Size selection — only for products that have sizes
+        if (product.sizes && product.sizes.length > 0) {
+          const len = window._selectedLength;
+          if (!len) { alert('Please select a size.'); return; }
+
+          const isDual = product.sizeLabels && product.sizeLabels.length >= 2;
+          if (isDual) {
+            const chest = window._selectedChest;
+            const data = window._burnooseSizeData[len];
+            if (!data) { alert('Please select a valid size.'); return; }
+            if (data._standalone === undefined && !chest) { alert('Please select a chest size.'); return; }
+            const sizeLabel = chest ? len + ' ' + chest : len;
+            cartId += '-' + sizeLabel;
+            cartName += ' (Size ' + sizeLabel + ')';
+            cartPrice = chest ? data[chest] : data._standalone;
+          } else {
+            const sizeObj = (window._singleSizes || []).find(function(s) { return s.size === len; });
+            cartId += '-' + len;
+            cartName += ' (Size ' + len + ')';
+            if (sizeObj) cartPrice = sizeObj.price;
+          }
+        }
+
+        // Colour selection (Original Burnoose only)
+        const colorSelect = document.getElementById('detail-color');
+        if (colorSelect) {
+          if (!colorSelect.value) { alert('Please select a colour.'); colorSelect.focus(); return; }
+          cartId += '-' + colorSelect.value;
+          cartName += ' \u2014 ' + colorSelect.value;
+        }
+
+        // Add to cart
+        const cart = CartManager.getCart();
+        const existing = cart.find(function(item) { return String(item.id) === cartId; });
+        if (existing) {
+          existing.qty += qty;
+        } else {
+          cart.push({ id: cartId, name: cartName, category: product.category, price: cartPrice, image: product.image, qty: qty });
+        }
+        CartManager.saveCart(cart);
+        updateCartBadge();
+        showToast(qty > 1 ? qty + ' \u00d7 "' + cartName + '" added to cart' : '"' + cartName + '" added to cart');
+
+      } catch (err) {
+        alert('Something went wrong: ' + err.message);
+      }
     }
 
     // Image slider controls
