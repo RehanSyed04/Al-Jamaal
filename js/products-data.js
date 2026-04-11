@@ -1,5 +1,5 @@
 /**
- * ALJAMAAL OFFICIAL — Product Catalog
+ * AL JAMAAL OFFICIAL — Product Catalog
  *
  * HOW TO EDIT PRODUCTS:
  *   name        — product name shown on site

@@ -1,5 +1,5 @@
 /**
- * ALJAMAAL OFFICIAL — Main JavaScript
+ * AL JAMAAL OFFICIAL — Main JavaScript
  * Handles: Shopping cart, mobile menu, toast notifications
  */
 
