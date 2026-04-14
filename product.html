@@ -170,15 +170,17 @@
         ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Need a size larger than 2X-Large? We\'d love to accommodate you \u2014 <a href="contact.html" style="color:#8B7355;font-weight:600;">contact us</a> for a custom order.</div>'
         : '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Interested in a custom order? Use our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll be happy to assist.</div>';
 
-      // Color selector — dynamic from product.colors
+      // Color selector — dynamic from product.colors, button-based so unavailable colours can be crossed out
       const colorHTML = (product.colors && product.colors.length > 0)
-        ? '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Colour</label><select id="detail-color" onchange="updateStockUI()" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a colour</option>' +
-          product.colors.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') +
-          '</select></div>'
+        ? '<div style="flex:0 0 100%;width:100%;"><div style="margin-bottom:16px;padding:16px;border:1px solid #E8E2D7;background:#FAF8F5;">' +
+            '<div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;color:#555;">SELECT COLOUR: <span id="selected-color-label" style="font-weight:600;letter-spacing:0;text-transform:none;color:#8B7355;"></span></div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+            product.colors.map(function(c) { return '<button type="button" class="size-btn" data-color="' + c + '" onclick="selectColor(\'' + c + '\')">' + c + '</button>'; }).join('') +
+            '</div></div></div>'
         : '';
 
       const colorNote = (product.colors && product.colors.length > 0)
-        ? '<p style="font-size:12px;color:#999;margin:-12px 0 20px;line-height:1.6;">Our photos may feature colours from past seasons. Only the colours listed above are currently available.</p>'
+        ? '<p style="font-size:12px;color:#999;margin:-4px 0 20px;line-height:1.6;">Our photos may feature colours from past seasons. Only the colours listed above are currently available.</p>'
         : '';
 
       // Build size selector HTML separately to avoid nested template literal issues
@@ -380,6 +382,17 @@
       updateStockUI();
     }
 
+    function selectColor(color) {
+      var btn = document.querySelector('.size-btn[data-color="' + color + '"]');
+      if (btn && btn.dataset.unavailable) return; // ignore clicks on crossed-out colours
+      window._selectedColor = color;
+      document.querySelectorAll('.size-btn[data-color]').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      var labelEl = document.getElementById('selected-color-label');
+      if (labelEl) labelEl.textContent = color;
+      updateStockUI();
+    }
+
     function getStockKey() {
       if (!product.stock || !window._selectedLength) return null;
       var len = window._selectedLength;
@@ -393,16 +406,49 @@
     function getAvailableStock() {
       if (!product.stock) return null;
       var key = getStockKey();
-      var colorEl = document.getElementById('detail-color');
-      var color = colorEl ? colorEl.value : null;
+      var color = window._selectedColor || null;
       if (!key || !color) return null;
       var sizeStock = product.stock[key];
       if (!sizeStock) return 0;
       return sizeStock[color] || 0;
     }
 
+    function updateColorAvailability() {
+      if (!product.colors || !product.stock) return;
+      var key = getStockKey();
+      document.querySelectorAll('.size-btn[data-color]').forEach(function(btn) {
+        var color = btn.dataset.color;
+        var avail = (key !== null && product.stock[key]) ? (product.stock[key][color] || 0) : null;
+        if (avail === null || avail > 0) {
+          // size not yet chosen, or colour is in stock — show normally
+          delete btn.dataset.unavailable;
+          btn.style.opacity = '';
+          btn.style.textDecoration = '';
+          btn.style.cursor = '';
+        } else {
+          // colour is out of stock for this size — cross it out
+          btn.dataset.unavailable = '1';
+          btn.style.opacity = '0.4';
+          btn.style.textDecoration = 'line-through';
+          btn.style.cursor = 'default';
+        }
+      });
+      // If the currently selected colour just became unavailable, deselect it
+      if (window._selectedColor && key !== null) {
+        var sizeStock = product.stock[key];
+        var stillAvail = sizeStock ? (sizeStock[window._selectedColor] || 0) : 0;
+        if (stillAvail === 0) {
+          window._selectedColor = null;
+          document.querySelectorAll('.size-btn[data-color]').forEach(function(b) { b.classList.remove('active'); });
+          var labelEl = document.getElementById('selected-color-label');
+          if (labelEl) labelEl.textContent = '';
+        }
+      }
+    }
+
     function updateStockUI() {
       if (!product.stock) return;
+      updateColorAvailability();
       var statusEl = document.getElementById('stock-status');
       var addBtn = document.getElementById('add-to-cart-btn');
       var avail = getAvailableStock();
@@ -477,18 +523,17 @@
         }
 
         // Colour selection
-        const colorSelect = document.getElementById('detail-color');
-        if (colorSelect) {
-          if (!colorSelect.value) { alert('Please select a colour.'); colorSelect.focus(); return; }
-          cartId += '-' + colorSelect.value;
-          cartName += ' \u2014 ' + colorSelect.value;
+        if (product.colors && product.colors.length > 0) {
+          if (!window._selectedColor) { alert('Please select a colour.'); return; }
+          cartId += '-' + window._selectedColor;
+          cartName += ' \u2014 ' + window._selectedColor;
         }
 
         // Stock check
         const cart = CartManager.getCart();
         if (product.stock) {
           const stockKey = getStockKey();
-          const color = colorSelect ? colorSelect.value : null;
+          const color = window._selectedColor || null;
           if (stockKey && color) {
             const sizeStock = product.stock[stockKey];
             const available = (sizeStock && sizeStock[color]) || 0;
