@@ -170,14 +170,14 @@
         ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Need a size larger than 2X-Large? We\'d love to accommodate you \u2014 <a href="contact.html" style="color:#8B7355;font-weight:600;">contact us</a> for a custom order.</div>'
         : '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Interested in a custom order? Use our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll be happy to assist.</div>';
 
-      // Color selector for Original Burnoose and Ladies Fleece Burnoose
-      const colorHTML = product.id === 1
-        ? '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Colour</label><select id="detail-color" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a colour</option><option value="Black">Black</option><option value="Camel">Camel</option><option value="Light Grey">Light Grey</option><option value="Navy Blue">Navy Blue</option></select></div>'
-        : product.id === 20
-        ? '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Colour</label><select id="detail-color" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a colour</option><option value="Dark Pink">Dark Pink</option><option value="Dark Green">Dark Green</option><option value="Beige">Beige</option><option value="Navy Blue">Navy Blue</option><option value="Camel">Camel</option><option value="Black">Black</option><option value="Maroon">Maroon</option><option value="Light Grey">Light Grey</option><option value="Dark Grey">Dark Grey</option></select></div>'
+      // Color selector — dynamic from product.colors
+      const colorHTML = (product.colors && product.colors.length > 0)
+        ? '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Colour</label><select id="detail-color" onchange="updateStockUI()" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a colour</option>' +
+          product.colors.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') +
+          '</select></div>'
         : '';
 
-      const colorNote = (product.id === 1 || product.id === 20)
+      const colorNote = (product.colors && product.colors.length > 0)
         ? '<p style="font-size:12px;color:#999;margin:-12px 0 20px;line-height:1.6;">Our photos may feature colours from past seasons. Only the colours listed above are currently available.</p>'
         : '';
 
@@ -213,6 +213,7 @@
             ${colorHTML}
           </div>
           ${colorNote}
+          <div id="stock-status" style="margin:-8px 0 12px;"></div>
 
           <div class="product-detail-qty">
             <label>Quantity</label>
@@ -230,7 +231,7 @@
               ? `<button class="btn btn-primary" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled>Sold Out</button>`
               : product.price === 0
               ? `<a href="contact.html" class="btn btn-primary" style="flex:1;text-align:center;">Contact Us for Pricing</a>`
-              : `<button class="btn btn-primary" style="flex:1;" onclick="addDetailToCart()">Add to Cart</button>`
+              : `<button id="add-to-cart-btn" class="btn btn-primary" style="flex:1;" onclick="addDetailToCart()">Add to Cart</button>`
             }
             <a href="cart.html" class="btn btn-dark" style="flex:1; text-align:center;">
               View Cart
@@ -266,7 +267,9 @@
       const el = document.getElementById('detail-qty');
       let qty = parseInt(el.textContent) + delta;
       if (qty < 1) qty = 1;
-      if (qty > 99) qty = 99;
+      const avail = getAvailableStock();
+      const maxQty = (avail !== null && avail > 0) ? Math.min(avail, 99) : 99;
+      if (qty > maxQty) qty = maxQty;
       el.textContent = qty;
     }
 
@@ -335,6 +338,7 @@
       document.querySelector('.size-btn[data-idx="' + idx + '"]').classList.add('active');
       document.getElementById('selected-length-label').textContent = s.size;
       document.getElementById('product-detail-price').textContent = 'R ' + s.price.toFixed(2);
+      updateStockUI();
     }
 
     function selectLength(len) {
@@ -362,6 +366,7 @@
         var minPrice = Math.min.apply(null, Object.values(data));
         priceEl.textContent = 'From R ' + minPrice.toFixed(2);
       }
+      updateStockUI();
     }
 
     function selectChest(chest) {
@@ -372,6 +377,73 @@
       window._selectedChest = chest;
       var price = window._burnooseSizeData[window._selectedLength][chest];
       document.getElementById('product-detail-price').textContent = 'R ' + price.toFixed(2);
+      updateStockUI();
+    }
+
+    function getStockKey() {
+      if (!product.stock || !window._selectedLength) return null;
+      var len = window._selectedLength;
+      var chest = window._selectedChest;
+      var fullKey = chest ? len + ' ' + chest : len;
+      if (product.stock[fullKey] !== undefined) return fullKey;
+      if (product.stock[len] !== undefined) return len;
+      return null;
+    }
+
+    function getAvailableStock() {
+      if (!product.stock) return null;
+      var key = getStockKey();
+      var colorEl = document.getElementById('detail-color');
+      var color = colorEl ? colorEl.value : null;
+      if (!key || !color) return null;
+      var sizeStock = product.stock[key];
+      if (!sizeStock) return 0;
+      return sizeStock[color] || 0;
+    }
+
+    function updateStockUI() {
+      if (!product.stock) return;
+      var statusEl = document.getElementById('stock-status');
+      var addBtn = document.getElementById('add-to-cart-btn');
+      var avail = getAvailableStock();
+
+      if (avail === null) {
+        if (statusEl) statusEl.textContent = '';
+        if (addBtn) { addBtn.disabled = false; addBtn.textContent = 'Add to Cart'; addBtn.style.opacity = ''; addBtn.style.cursor = ''; }
+        return;
+      }
+
+      var qtyEl = document.getElementById('detail-qty');
+      if (qtyEl && avail > 0) {
+        var cur = parseInt(qtyEl.textContent) || 1;
+        if (cur > avail) qtyEl.textContent = avail;
+      } else if (qtyEl && avail === 0) {
+        qtyEl.textContent = '1';
+      }
+
+      if (statusEl) {
+        if (avail === 0) {
+          statusEl.innerHTML = '<span style="color:#c0392b;font-weight:600;font-size:14px;">Out of Stock</span>';
+        } else if (avail <= 3) {
+          statusEl.innerHTML = '<span style="color:#e67e22;font-weight:600;font-size:14px;">Only ' + avail + ' left</span>';
+        } else {
+          statusEl.textContent = '';
+        }
+      }
+
+      if (addBtn) {
+        if (avail === 0) {
+          addBtn.disabled = true;
+          addBtn.textContent = 'Out of Stock';
+          addBtn.style.opacity = '0.4';
+          addBtn.style.cursor = 'not-allowed';
+        } else {
+          addBtn.disabled = false;
+          addBtn.textContent = 'Add to Cart';
+          addBtn.style.opacity = '';
+          addBtn.style.cursor = '';
+        }
+      }
     }
 
     function addDetailToCart() {
@@ -404,7 +476,7 @@
           }
         }
 
-        // Colour selection (Original Burnoose only)
+        // Colour selection
         const colorSelect = document.getElementById('detail-color');
         if (colorSelect) {
           if (!colorSelect.value) { alert('Please select a colour.'); colorSelect.focus(); return; }
@@ -412,8 +484,25 @@
           cartName += ' \u2014 ' + colorSelect.value;
         }
 
-        // Add to cart
+        // Stock check
         const cart = CartManager.getCart();
+        if (product.stock) {
+          const stockKey = getStockKey();
+          const color = colorSelect ? colorSelect.value : null;
+          if (stockKey && color) {
+            const sizeStock = product.stock[stockKey];
+            const available = (sizeStock && sizeStock[color]) || 0;
+            const inCart = cart.find(function(i) { return String(i.id) === cartId; });
+            const alreadyInCart = inCart ? inCart.qty : 0;
+            if (available === 0) { alert('Sorry, this item is out of stock.'); return; }
+            if (alreadyInCart + qty > available) {
+              alert('Only ' + available + ' available in this colour and size. You already have ' + alreadyInCart + ' in your cart.');
+              return;
+            }
+          }
+        }
+
+        // Add to cart
         const existing = cart.find(function(item) { return String(item.id) === cartId; });
         if (existing) {
           existing.qty += qty;
