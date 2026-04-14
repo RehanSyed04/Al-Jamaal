@@ -351,10 +351,44 @@ function renderCart() {
   updateCartSummary();
 }
 
+function getCartItemStock(item) {
+  // Cart item IDs are formatted as: "productId", "productId-sizeLabel", or "productId-sizeLabel-color"
+  // Parse the product ID from the start, then find which color (if any) the ID ends with.
+  if (typeof products === 'undefined') return null;
+  const idStr = String(item.id);
+  const dashIdx = idStr.indexOf('-');
+  if (dashIdx === -1) return null; // no size/color variant, no stock to check
+  const productId = parseInt(idStr.substring(0, dashIdx));
+  const product = products.find(p => p.id === productId);
+  if (!product || !product.stock) return null;
+  const rest = idStr.substring(dashIdx + 1); // e.g. "56 Medium-Black" or "56 Medium-Light Grey"
+  if (!product.colors) return null;
+  // Match the color by checking what the rest of the ID ends with
+  for (const color of product.colors) {
+    if (rest === color || rest.endsWith('-' + color)) {
+      const stockKey = rest === color ? null : rest.substring(0, rest.length - color.length - 1);
+      if (!stockKey) return null;
+      const sizeStock = product.stock[stockKey];
+      return (sizeStock && sizeStock[color]) || 0;
+    }
+  }
+  return null;
+}
+
 function changeQty(id, delta) {
   const cart = CartManager.getCart();
   const item = cart.find(i => String(i.id) === String(id));
-  if (item) CartManager.updateQty(id, item.qty + delta);
+  if (!item) return;
+
+  if (delta > 0) {
+    const available = getCartItemStock(item);
+    if (available !== null && item.qty >= available) {
+      showToast('Only ' + available + ' available in this size and colour.');
+      return;
+    }
+  }
+
+  CartManager.updateQty(id, item.qty + delta);
   renderCart();
 }
 
