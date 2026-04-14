@@ -552,7 +552,9 @@
         if (existing) {
           existing.qty += qty;
         } else {
-          cart.push({ id: cartId, name: cartName, category: product.category, price: cartPrice, image: product.image, qty: qty });
+          const stockKey = product.stock ? getStockKey() : null;
+          const selectedColor = (product.colors && product.colors.length > 0) ? window._selectedColor : null;
+          cart.push({ id: cartId, name: cartName, category: product.category, price: cartPrice, image: product.image, qty: qty, productId: product.id, stockKey: stockKey, color: selectedColor });
         }
         CartManager.saveCart(cart);
         updateCartBadge();
