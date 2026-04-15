@@ -334,6 +334,8 @@
 
     function selectSingleSize(idx) {
       var s = window._singleSizes[idx];
+      var btn = document.querySelector('.size-btn[data-idx="' + idx + '"]');
+      if (btn && btn.dataset.unavailable) return;
       window._selectedLength = s.size;
       window._selectedChest = null;
       document.querySelectorAll('.size-btn[data-idx]').forEach(function(b) { b.classList.remove('active'); });
@@ -344,8 +346,10 @@
     }
 
     function selectLength(len) {
+      var lenBtn = document.querySelector('.size-btn[data-length="' + len + '"]');
+      if (lenBtn && lenBtn.dataset.unavailable) return;
       document.querySelectorAll('.size-btn[data-length]').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelector('.size-btn[data-length="' + len + '"]').classList.add('active');
+      lenBtn.classList.add('active');
       document.getElementById('selected-length-label').textContent = len;
 
       window._selectedLength = len;
@@ -372,8 +376,10 @@
     }
 
     function selectChest(chest) {
+      var chestBtn = document.querySelector('.size-btn[data-chest="' + chest + '"]');
+      if (chestBtn && chestBtn.dataset.unavailable) return;
       document.querySelectorAll('.size-btn[data-chest]').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelector('.size-btn[data-chest="' + chest + '"]').classList.add('active');
+      chestBtn.classList.add('active');
       document.getElementById('selected-chest-label').textContent = chest;
 
       window._selectedChest = chest;
@@ -413,6 +419,79 @@
       return sizeStock[color] || 0;
     }
 
+    function applySizeCrossout(btn) {
+      btn.dataset.unavailable = '1';
+      btn.style.opacity = '0.4';
+      btn.style.textDecoration = 'line-through';
+      btn.style.cursor = 'default';
+    }
+
+    function clearSizeCrossout(btn) {
+      delete btn.dataset.unavailable;
+      btn.style.opacity = '';
+      btn.style.textDecoration = '';
+      btn.style.cursor = '';
+    }
+
+    function updateSizeAvailability() {
+      if (!product.stock || !product.colors) return;
+      var color = window._selectedColor || null;
+
+      // Single-dimension size buttons (Toddlers, Boys, Girls burnooses)
+      document.querySelectorAll('.size-btn[data-idx]').forEach(function(btn) {
+        if (!color) { clearSizeCrossout(btn); return; }
+        var idx = parseInt(btn.dataset.idx);
+        var s = window._singleSizes && window._singleSizes[idx];
+        if (!s) { clearSizeCrossout(btn); return; }
+        var avail = (product.stock[s.size] && product.stock[s.size][color]) || 0;
+        avail > 0 ? clearSizeCrossout(btn) : applySizeCrossout(btn);
+      });
+
+      // Length buttons (dual selector — Ladies Fleece Burnoose)
+      document.querySelectorAll('.size-btn[data-length]').forEach(function(btn) {
+        if (!color) { clearSizeCrossout(btn); return; }
+        var len = btn.dataset.length;
+        var data = window._burnooseSizeData && window._burnooseSizeData[len];
+        if (!data) { clearSizeCrossout(btn); return; }
+        var hasAny = Object.keys(data).some(function(chest) {
+          var key = chest === '_standalone' ? len : len + ' ' + chest;
+          return (product.stock[key] && product.stock[key][color]) ? product.stock[key][color] > 0 : false;
+        });
+        hasAny ? clearSizeCrossout(btn) : applySizeCrossout(btn);
+      });
+
+      // Chest buttons (dual selector, visible after length is selected)
+      document.querySelectorAll('.size-btn[data-chest]').forEach(function(btn) {
+        if (!color || !window._selectedLength) { clearSizeCrossout(btn); return; }
+        var key = window._selectedLength + ' ' + btn.dataset.chest;
+        var avail = (product.stock[key] && product.stock[key][color]) || 0;
+        avail > 0 ? clearSizeCrossout(btn) : applySizeCrossout(btn);
+      });
+
+      // If the currently selected size just became unavailable for this colour, deselect it
+      if (color && window._selectedLength) {
+        var activeIdx = document.querySelector('.size-btn[data-idx].active');
+        if (activeIdx && activeIdx.dataset.unavailable) {
+          window._selectedLength = null;
+          document.querySelectorAll('.size-btn[data-idx]').forEach(function(b) { b.classList.remove('active'); });
+          var lbl = document.getElementById('selected-length-label');
+          if (lbl) lbl.textContent = '';
+        }
+        var activeLen = document.querySelector('.size-btn[data-length].active');
+        if (activeLen && activeLen.dataset.unavailable) {
+          window._selectedLength = null;
+          window._selectedChest = null;
+          document.querySelectorAll('.size-btn[data-length], .size-btn[data-chest]').forEach(function(b) { b.classList.remove('active'); });
+          var lenLbl = document.getElementById('selected-length-label');
+          if (lenLbl) lenLbl.textContent = '';
+          var chestLbl = document.getElementById('selected-chest-label');
+          if (chestLbl) chestLbl.textContent = '';
+          var chestSec = document.getElementById('chest-section');
+          if (chestSec) chestSec.style.display = 'none';
+        }
+      }
+    }
+
     function updateColorAvailability() {
       if (!product.colors || !product.stock) return;
       var key = getStockKey();
@@ -449,6 +528,7 @@
     function updateStockUI() {
       if (!product.stock) return;
       updateColorAvailability();
+      updateSizeAvailability();
       var statusEl = document.getElementById('stock-status');
       var addBtn = document.getElementById('add-to-cart-btn');
       var avail = getAvailableStock();
