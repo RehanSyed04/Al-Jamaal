@@ -7,6 +7,14 @@
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Product — Al Jamaal Official</title>
   <link rel="stylesheet" href="css/styles.css?v=13">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-JHS1NC8DF3');
+  </script>
 </head>
 
 <body>
@@ -119,7 +127,7 @@
   <script src="js/products-data.js?v=16"></script>
   <script src="js/script.js"></script>
   <script>
-    const dualSelectorIds = [1, 2, 3, 10, 11, 18, 19, 20];
+    const dualSelectorIds = [1, 2, 3, 10, 11, 18, 19, 20, 99];
 
     // Get the product id from the URL, e.g. product.html?id=3
     const params = new URLSearchParams(window.location.search);
@@ -261,6 +269,7 @@
       }
 
       renderProductGrid('related-products', related);
+      updateStockUI();
     }
 
 
@@ -411,6 +420,7 @@
 
     function getAvailableStock() {
       if (!product.stock) return null;
+      if (typeof product.stock === 'number') return product.stock;
       var key = getStockKey();
       var color = window._selectedColor || null;
       if (!key || !color) return null;
@@ -527,6 +537,26 @@
 
     function updateStockUI() {
       if (!product.stock) return;
+      // Simple flat stock (no sizes/colours) — e.g. block sets
+      if (typeof product.stock === 'number') {
+        var statusEl = document.getElementById('stock-status');
+        var addBtn = document.getElementById('add-to-cart-btn');
+        var avail = product.stock;
+        if (statusEl) {
+          if (avail === 0) {
+            statusEl.innerHTML = '<span style="color:#c0392b;font-weight:600;font-size:14px;">Out of Stock</span>';
+          } else if (avail <= 3) {
+            statusEl.innerHTML = '<span style="color:#e67e22;font-weight:600;font-size:14px;">Only ' + avail + ' left</span>';
+          } else {
+            statusEl.textContent = '';
+          }
+        }
+        if (addBtn && avail === 0) {
+          addBtn.disabled = true; addBtn.textContent = 'Out of Stock';
+          addBtn.style.opacity = '0.5'; addBtn.style.cursor = 'not-allowed';
+        }
+        return;
+      }
       updateColorAvailability();
       updateSizeAvailability();
       var statusEl = document.getElementById('stock-status');
@@ -612,17 +642,29 @@
         // Stock check
         const cart = CartManager.getCart();
         if (product.stock) {
-          const stockKey = getStockKey();
-          const color = window._selectedColor || null;
-          if (stockKey && color) {
-            const sizeStock = product.stock[stockKey];
-            const available = (sizeStock && sizeStock[color]) || 0;
+          if (typeof product.stock === 'number') {
+            // Simple flat stock (no sizes/colours)
+            const available = product.stock;
             const inCart = cart.find(function(i) { return String(i.id) === cartId; });
             const alreadyInCart = inCart ? inCart.qty : 0;
             if (available === 0) { alert('Sorry, this item is out of stock.'); return; }
             if (alreadyInCart + qty > available) {
-              alert('Only ' + available + ' available in this colour and size. You already have ' + alreadyInCart + ' in your cart.');
+              alert('Only ' + available + ' available. You already have ' + alreadyInCart + ' in your cart.');
               return;
+            }
+          } else {
+            const stockKey = getStockKey();
+            const color = window._selectedColor || null;
+            if (stockKey && color) {
+              const sizeStock = product.stock[stockKey];
+              const available = (sizeStock && sizeStock[color]) || 0;
+              const inCart = cart.find(function(i) { return String(i.id) === cartId; });
+              const alreadyInCart = inCart ? inCart.qty : 0;
+              if (available === 0) { alert('Sorry, this item is out of stock.'); return; }
+              if (alreadyInCart + qty > available) {
+                alert('Only ' + available + ' available in this colour and size. You already have ' + alreadyInCart + ' in your cart.');
+                return;
+              }
             }
           }
         }

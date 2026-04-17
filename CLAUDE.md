@@ -31,20 +31,27 @@ Built by UMass Boston IT485 Group 8 as a capstone project:
 
 ## External Services
 
-### PayFast (Payments) — currently SANDBOX
-- Merchant ID: `10000100` | Merchant Key: `46f0cd694581a`
-- Sandbox URL: `https://sandbox.payfast.co.za/eng/process`
-- Return URL: `https://umbit485g8.disent.com/thankyou.html`
-- Cancel URL: `https://umbit485g8.disent.com/cart.html`
-- **Go-live:** swap Merchant ID/Key/URL and update return/cancel URLs to aljamaalofficial.com
+### PayFast (Payments) — LIVE
+- Merchant ID: `34451647` | Merchant Key: `hsgypuphwxgot`
+- Live URL: `https://www.payfast.co.za/eng/process`
+- Return URL: `https://aljamaalofficial.com/thankyou.html`
+- Cancel URL: `https://aljamaalofficial.com/cart.html`
 
-### The Courier Guy / Shiplogic (Shipping) — currently SANDBOX
+### The Courier Guy / Shiplogic (Shipping) — LIVE
 - API via Cloudflare Worker (keeps API key off the browser)
 - Worker URL: `https://aljamaal-shipping.syedsarmiento.workers.dev`
 - Endpoints: `/rates` (POST) and `/shipments` (POST)
 - Auth: `Authorization: Bearer <key>` (NOT X-API-Key)
 - Tracking reference field: `short_tracking_reference` (not `waybill_number`)
-- **Go-live:** client registers production Shiplogic account, gets real API key, updates Worker
+- Real API key active in Cloudflare Worker (aljamaal-shipping.syedsarmiento.workers.dev)
+
+### Resend (Order Confirmation Emails) — LIVE
+- API key in Cloudflare Worker (`RESEND_API_KEY`)
+- Domain: `aljamaalofficial.com` (verified Apr 2026, eu-west-1)
+- From: `orders@aljamaalofficial.com` | Reply-To: `aljamaalcustomersupport@gmail.com`
+- Triggered from `thankyou.html` via Worker `/send-confirmation` endpoint
+- Sends two emails per order: customer confirmation + client "New Order" notification
+- DNS records managed by Anthony at disent (anthony.malizio@disent.com)
 
 ### EmailJS (Contact Form)
 - Account: aljamaalcustomersupport@gmail.com (client's account)
@@ -85,21 +92,23 @@ Stylesheet links use `?v=N` query param (e.g. `?v=13`). Increment when making br
 ## Open Bugs (as of Apr 2026)
 | # | Description |
 |---|---|
-| 28 | No branded order confirmation email after PayFast payment |
+| 28 | ~~No branded order confirmation email after PayFast payment~~ — resolved Apr 2026 |
 | 34 | Sizes missing from individual product pages |
 | 35 | ~~Collection address + TCG API key are placeholders~~ — resolved Apr 2026 |
-| 37 | PayFast return URL points to disent.com instead of aljamaalofficial.com |
+| 37 | ~~PayFast return URL points to disent.com~~ — resolved Apr 2026 |
 | 39 | Non-SA phone numbers clear the phone field — TCG gets empty mobile_number |
 | 40 | Mobile remove button on cart doesn't show |
 
 ---
 
 ## Go-Live Checklist (for client handoff)
-- [ ] PayFast: register production account, swap Merchant ID + Key + action URL in checkout.html
-- [ ] TCG/Shiplogic: register production account, get real API key
+- [x] PayFast: live Merchant ID + Key + action URL updated in checkout.html (Apr 2026)
+- [x] TCG/Shiplogic: real API key active in Cloudflare Worker (Apr 2026)
 - [x] Cloudflare Worker: swap API key, collection address, and collection phone number
-- [ ] Update PayFast return/cancel URLs from disent.com → aljamaalofficial.com
-- [ ] Muslim Blocks product: add real image or mark Sold Out
+- [x] Update PayFast return/cancel URLs from disent.com → aljamaalofficial.com (Apr 2026)
 - [ ] Add sizes to all individual product pages
+- [x] Set `TEST_MODE = false` in checkout.html (Apr 2026)
+- [x] Uncomment `bookShipment(order)` in thankyou.html (Apr 2026)
+- [ ] Remove Testing Item (id: 99) from top of js/products-data.js (when client is done testing)
 - [x] Replace placeholder email → aljamaalcustomersupport@gmail.com
 - [x] Replace placeholder WhatsApp → +27 79 753 0827

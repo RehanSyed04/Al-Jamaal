@@ -7,6 +7,14 @@
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Checkout — Al Jamaal Official</title>
   <link rel="stylesheet" href="css/styles.css?v=14">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-JHS1NC8DF3');
+  </script>
 </head>
 
 <body>
@@ -66,15 +74,14 @@
           -->
           <form
             id="checkout-form"
-            action="https://sandbox.payfast.co.za/eng/process"
+            action="https://www.payfast.co.za/eng/process"
             method="POST"
             onsubmit="return preparePayFastForm()"
           >
 
             <!-- PayFast hidden fields -->
-            <!-- REPLACE these with your client's real Merchant ID and Key from payfast.co.za -->
-            <input type="hidden" name="merchant_id" value="10000100">
-            <input type="hidden" name="merchant_key" value="46f0cd694581a">
+            <input type="hidden" name="merchant_id" value="34451647">
+            <input type="hidden" name="merchant_key" value="hsgypuphwxgot">
             <input type="hidden" name="return_url" value="https://aljamaalofficial.com/thankyou.html">
             <input type="hidden" name="cancel_url" value="https://aljamaalofficial.com/cart.html">
             <input type="hidden" name="notify_url" value="">
@@ -271,13 +278,16 @@
     const WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
 
     // Parcel size categories by product ID
-    const SMALL_IDS  = [3, 7, 11, 12];
+    const SMALL_IDS  = [3, 7, 11, 12, 99]; // 99 = testing item
     const MEDIUM_IDS = [5, 6, 8, 13];
     const PARCEL_SIZES = {
       small:  { submitted_length_cm: 30, submitted_width_cm: 20, submitted_height_cm: 5,  submitted_weight_kg: 0.5 },
       medium: { submitted_length_cm: 40, submitted_width_cm: 30, submitted_height_cm: 8,  submitted_weight_kg: 1.0 },
       large:  { submitted_length_cm: 50, submitted_width_cm: 40, submitted_height_cm: 10, submitted_weight_kg: 1.5 }
     };
+
+    // TEST MODE — set to false before going live
+    const TEST_MODE = false;
 
     let selectedShipping = null;
     let shippingDebounceTimer = null;
@@ -315,8 +325,25 @@
     function onAddressChange() {
       const addr = getDeliveryAddress();
       if (!addr.street_address || !addr.local_area || !addr.city || !addr.code || !addr.zone) return;
+      if (TEST_MODE) { selectTestShipping(); return; }
       clearTimeout(shippingDebounceTimer);
       shippingDebounceTimer = setTimeout(fetchShippingRates, 900);
+    }
+
+    function selectTestShipping() {
+      const shippingSection = document.getElementById('shipping-section');
+      const shippingOptions = document.getElementById('shipping-options');
+      shippingSection.style.display = 'block';
+      shippingOptions.innerHTML = `
+        <div class="shipping-option selected" onclick="selectShipping(this, 'TEST', 1, 'Test Shipping')">
+          <div class="shipping-option-info">
+            <strong>Test Shipping</strong>
+            <span>TEST MODE — not a real shipment</span>
+          </div>
+          <div class="shipping-option-price">R 1.00</div>
+        </div>`;
+      selectedShipping = { code: 'TEST', rate: 1, name: 'Test Shipping' };
+      updateOrderTotals();
     }
 
     async function fetchShippingRates() {

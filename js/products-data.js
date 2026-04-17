@@ -12,6 +12,36 @@
 
 const products = [
 
+  // ── TESTING ONLY — remove before handoff ───────────────
+  {
+    id: 99,
+    name: "Testing Item",
+    category: "Men",
+    price: 17,
+    sizeLabels: ['Length', 'Chest'],
+    sizes: [
+      { size: '50 Small',  price: 17 },
+      { size: '50 Medium', price: 17 },
+      { size: '50 Large',  price: 17 },
+      { size: '52 Small',  price: 17 },
+      { size: '52 Medium', price: 17 },
+      { size: '52 Large',  price: 17 },
+    ],
+    colors: ['Black', 'White', 'Red'],
+    stock: {
+      '50 Small':  { 'Black': 5, 'White': 0, 'Red': 1 },
+      '50 Medium': { 'Black': 3, 'White': 6, 'Red': 0 },
+      '50 Large':  { 'Black': 0, 'White': 2, 'Red': 5 },
+      '52 Small':  { 'Black': 2, 'White': 0, 'Red': 3 },
+      '52 Medium': { 'Black': 0, 'White': 3, 'Red': 2 },
+      '52 Large':  { 'Black': 4, 'White': 1, 'Red': 0 },
+    },
+    image: "images/BrandIcon.png",
+    images: ["images/BrandIcon.png"],
+    badge: "Testing",
+    description: "This is an internal testing item used to verify payments and site functionality. R1–R3 only. Please do not purchase."
+  },
+
   // ── MEN ────────────────────────────────────────────────
   {
     id: 1,
@@ -422,6 +452,7 @@ const products = [
     name: "The Great Mosque of Mecca",
     category: "Home & Gifts",
     price: 2100,
+    stock: 1,
     image: "images/TGMosqueM.jpg",
     images: ["images/TGMosqueM.jpg", "images/TGMosqueS1.jpg", "images/TGMosqueS2.jpg", "images/TGMosqueS3.jpg", "images/TGMosqueS4.jpg"],
     badge: "",
@@ -432,6 +463,7 @@ const products = [
     name: "Wange Mosque Kaaba of Mecca",
     category: "Home & Gifts",
     price: 850,
+    stock: 1,
     image: "images/Mosque-KaabaM.jpg",
     images: ["images/Mosque-KaabaM.jpg", "images/Mosque-KaabaS1.jpg", "images/Mosque-KaabaS2.jpg"],
     badge: "",

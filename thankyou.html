@@ -7,6 +7,14 @@
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Order Confirmed — Al Jamaal Official</title>
   <link rel="stylesheet" href="css/styles.css?v=14">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-JHS1NC8DF3');
+  </script>
   <style>
     /* ---- Shipment status widget ---- */
     .shipment-status { padding:24px 28px; border-radius:4px; text-align:center; }
@@ -257,6 +265,7 @@
       // Display summary first, then process shipment booking
       renderOrderSummary(order);
       bookShipment(order);
+      sendOrderConfirmation(order, null); // send confirmation email independently
     });
 
     /* ---- Order summary ---- */
@@ -319,6 +328,8 @@
 
       showStatus('loading');
 
+      let trackingNumber = null;
+
       try {
         const res = await fetch(`${WORKER_URL}/shipments`, {
           method: 'POST',
@@ -332,7 +343,8 @@
         });
         const data = await res.json();
         if (res.ok && (data.short_tracking_reference || data.waybill_number)) {
-          showStatus('success', data.short_tracking_reference || data.waybill_number);
+          trackingNumber = data.short_tracking_reference || data.waybill_number;
+          showStatus('success', trackingNumber);
         } else {
           console.error('TCG error:', data);
           showStatus('error');
@@ -340,6 +352,23 @@
       } catch (err) {
         console.error('Booking failed:', err);
         showStatus('error');
+      }
+
+      // Send order confirmation email regardless of TCG result
+      sendOrderConfirmation(order, trackingNumber);
+    }
+
+    /* ---- Order confirmation email ---- */
+    async function sendOrderConfirmation(order, trackingNumber) {
+      if (!order || !order.delivery_contact || !order.delivery_contact.email) return;
+      try {
+        await fetch(`${WORKER_URL}/send-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...order, tracking_number: trackingNumber })
+        });
+      } catch (err) {
+        console.error('Confirmation email failed:', err);
       }
     }
 
