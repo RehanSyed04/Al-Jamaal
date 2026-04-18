@@ -264,6 +264,7 @@
 
       // Display summary first, then process shipment booking
       renderOrderSummary(order);
+      decrementStock(order);
       bookShipment(order);
       sendOrderConfirmation(order, null); // send confirmation email independently
     });
@@ -315,6 +316,28 @@
         <div class="info-value">${street   || '—'}</div>
         <div class="info-value">${cityLine || '—'}</div>
       `;
+    }
+
+    /* ---- Stock decrement ---- */
+    async function decrementStock(order) {
+      if (!order || !order.items || order.items.length === 0) return;
+      var items = order.items.map(function(item) {
+        return {
+          productId: item.productId,
+          stockKey:  item.stockKey || null,
+          color:     item.color    || null,
+          qty:       item.qty
+        };
+      });
+      try {
+        await fetch(WORKER_URL + '/decrement-stock', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ items: items })
+        });
+      } catch (err) {
+        console.warn('Stock decrement failed (network):', err);
+      }
     }
 
     /* ---- TCG shipment booking ---- */

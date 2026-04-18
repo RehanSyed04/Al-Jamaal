@@ -270,6 +270,23 @@
 
       renderProductGrid('related-products', related);
       updateStockUI();
+      fetchLiveStock();
+    }
+
+    async function fetchLiveStock() {
+      try {
+        var res = await fetch(
+          'https://aljamaal-shipping.syedsarmiento.workers.dev/get-stock?product_id=' + product.id,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        if (data.stock === null || data.stock === undefined) return;
+        product.stock = data.stock;
+        updateStockUI();
+      } catch (err) {
+        console.warn('Live stock fetch failed, using static data:', err.message);
+      }
     }
 
 
