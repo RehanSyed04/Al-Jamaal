@@ -545,7 +545,7 @@
         if (statusEl) {
           if (avail === 0) {
             statusEl.innerHTML = '<span style="color:#c0392b;font-weight:600;font-size:14px;">Out of Stock</span>';
-          } else if (avail <= 3) {
+          } else if (avail <= 5) {
             statusEl.innerHTML = '<span style="color:#e67e22;font-weight:600;font-size:14px;">Only ' + avail + ' left</span>';
           } else {
             statusEl.textContent = '';
@@ -580,7 +580,7 @@
       if (statusEl) {
         if (avail === 0) {
           statusEl.innerHTML = '<span style="color:#c0392b;font-weight:600;font-size:14px;">Out of Stock</span>';
-        } else if (avail <= 3) {
+        } else if (avail <= 5) {
           statusEl.innerHTML = '<span style="color:#e67e22;font-weight:600;font-size:14px;">Only ' + avail + ' left</span>';
         } else {
           statusEl.textContent = '';

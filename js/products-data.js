@@ -488,7 +488,7 @@ const products = [
 
   {
     id: 21,
-    name: "Boys Khareef Soft Shell",
+    name: "Boys Khareef",
     category: "Kids",
     price: 625,
     sizeLabels: ['Length'],
@@ -520,11 +520,11 @@ const products = [
     image: "",
     images: [],
     badge: "New",
-    description: "The Al-Jamaal Boys Khareef Soft Shell. Wind and water resistant lightweight coverage in the same style as our bestselling adult Khareef collection. Full-length zip, drawstring hood, and deep pockets. Available in sizes 30 to 48."
+    description: "The Al-Jamaal Boys Khareef. Wind and water resistant lightweight coverage in the same style as our bestselling adult Khareef collection. Full-length zip, drawstring hood, and deep pockets. Available in sizes 30 to 48."
   },
   {
     id: 22,
-    name: "Girls Khareef Soft Shell",
+    name: "Girls Khareef",
     category: "Kids",
     price: 625,
     sizeLabels: ['Length'],
@@ -553,7 +553,7 @@ const products = [
     image: "",
     images: [],
     badge: "New",
-    description: "The Al-Jamaal Girls Khareef Soft Shell. Wind and water resistant lightweight coverage in the same style as our bestselling adult Khareef collection. Full-length zip, drawstring hood, and deep pockets. Available in sizes 30 to 48."
+    description: "The Al-Jamaal Girls Khareef. Wind and water resistant lightweight coverage in the same style as our bestselling adult Khareef collection. Full-length zip, drawstring hood, and deep pockets. Available in sizes 30 to 48."
   },
 
   // ── HOME ───────────────────────────────────────────────
