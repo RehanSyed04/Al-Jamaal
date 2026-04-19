@@ -190,7 +190,7 @@ const products = [
   // ── WOMEN ──────────────────────────────────────────────
   {
     id: 6,
-    name: "Khareef Ladies Long Jacket",
+    name: "Ladies Khareef Burnoose",
     category: "Women",
     price: 1250,
     sizeLabels: ['Length', 'Chest'],
@@ -488,7 +488,7 @@ const products = [
 
   {
     id: 21,
-    name: "Boys Khareef",
+    name: "Boys Khareef Burnoose",
     category: "Kids",
     price: 625,
     sizeLabels: ['Length'],
@@ -524,7 +524,7 @@ const products = [
   },
   {
     id: 22,
-    name: "Girls Khareef",
+    name: "Girls Khareef Burnoose",
     category: "Kids",
     price: 625,
     sizeLabels: ['Length'],

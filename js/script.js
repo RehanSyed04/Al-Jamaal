@@ -164,8 +164,9 @@ function createProductCardHTML(product) {
     ? `<span class="product-card-badge">${product.badge}</span>`
     : '';
 
-  const priceDisplay = product.sizes
-    ? `From R ${Math.min(...product.sizes.map(s => s.price)).toFixed(2)}`
+  const sizePrices = product.sizes && product.sizes.length > 0 ? product.sizes.map(s => s.price) : [];
+  const priceDisplay = sizePrices.length > 0
+    ? `From R ${Math.min(...sizePrices).toFixed(2)}`
     : product.price > 0 ? `R ${product.price.toFixed(2)}` : 'Price on request';
 
   const allImages = (product.images && product.images.length > 0)

@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Al Jamaal Official</title>
+  <link rel="icon" type="image/png" href="images/BrandIcon.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #F5F5F0; color: #1a1a1a; min-height: 100vh; }
+
+    /* ── Login ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a1a;
+    }
+    .login-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .login-logo { color: #C9A96E; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .login-logo-sub { color: #888; font-size: 13px; margin-bottom: 32px; }
+    .login-title { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+    .login-input {
+      width: 100%; padding: 12px 16px;
+      border: 1px solid #ddd; border-radius: 4px;
+      font-size: 16px; margin-bottom: 16px;
+    }
+    .login-input:focus { outline: none; border-color: #C9A96E; }
+    .login-btn {
+      width: 100%; padding: 13px;
+      background: #1a1a1a; color: #C9A96E;
+      border: none; border-radius: 4px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; letter-spacing: 1px;
+    }
+    .login-btn:hover { background: #333; }
+    .login-error { color: #c0392b; font-size: 14px; margin-top: 12px; display: none; }
+
+    /* ── Dashboard ── */
+    #dashboard { display: none; min-height: 100vh; }
+
+    .admin-nav {
+      background: #1a1a1a; height: 56px;
+      padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .admin-nav-brand { color: #C9A96E; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .admin-nav-brand span { color: #666; font-size: 12px; font-weight: 400; margin-left: 10px; }
+    .logout-btn {
+      background: transparent; border: 1px solid #444;
+      color: #aaa; padding: 6px 16px;
+      border-radius: 4px; cursor: pointer; font-size: 13px;
+    }
+    .logout-btn:hover { border-color: #C9A96E; color: #C9A96E; }
+
+    .tab-bar {
+      background: #fff;
+      border-bottom: 1px solid #e0ddd8;
+      padding: 0 32px;
+      display: flex;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 16px 24px;
+      border: none; background: transparent;
+      font-size: 14px; font-weight: 600;
+      color: #888; cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #1a1a1a; }
+    .tab-btn.active { color: #1a1a1a; border-bottom-color: #C9A96E; }
+
+    .tab-content { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid #e0ddd8;
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 1.5px; color: #888;
+      font-weight: 700; margin-bottom: 8px;
+    }
+    .card-value { font-size: 36px; font-weight: 700; }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none;
+      text-decoration: none; line-height: 1;
+    }
+    .btn-primary { background: #1a1a1a; color: #C9A96E; }
+    .btn-primary:hover { background: #333; }
+    .btn-outline { background: transparent; border: 1px solid #ccc; color: #1a1a1a; }
+    .btn-outline:hover { border-color: #1a1a1a; }
+    .btn-danger { background: transparent; border: 1px solid #e0b4b0; color: #c0392b; }
+    .btn-danger:hover { background: #fdf4f3; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+    /* ── Tables ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th {
+      text-align: left; padding: 12px 16px;
+      background: #F7F5F1;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 1px; color: #888;
+      border-bottom: 1px solid #e0ddd8;
+    }
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0ede8;
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #fafaf8; }
+
+    /* ── Forms ── */
+    .form-section { margin-bottom: 28px; }
+    .form-section-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: #888; margin-bottom: 14px;
+      padding-bottom: 8px; border-bottom: 1px solid #e0ddd8;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+    .form-row.single { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #555; }
+    .form-input, .form-select, .form-textarea {
+      padding: 10px 12px;
+      border: 1px solid #ddd; border-radius: 4px;
+      font-size: 14px; font-family: Arial, sans-serif;
+      background: #fff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: #C9A96E;
+    }
+    .form-textarea { min-height: 90px; resize: vertical; }
+
+    /* ── Dynamic list rows ── */
+    .list-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .list-row input {
+      flex: 1; padding: 8px 10px;
+      border: 1px solid #ddd; border-radius: 4px; font-size: 14px;
+    }
+    .list-row input.price-input { flex: 0 0 100px; }
+    .remove-row-btn {
+      background: transparent; border: none;
+      color: #c0392b; cursor: pointer;
+      font-size: 18px; padding: 4px 8px; line-height: 1;
+    }
+    .add-row-btn {
+      background: transparent; border: 1px dashed #bbb;
+      color: #888; padding: 8px 16px;
+      border-radius: 4px; cursor: pointer;
+      font-size: 13px; width: 100%; margin-top: 4px;
+    }
+    .add-row-btn:hover { border-color: #C9A96E; color: #C9A96E; }
+
+    /* ── Product form overlay ── */
+    .overlay {
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200; overflow-y: auto; padding: 32px;
+    }
+    .overlay.active { display: block; }
+    .overlay-card {
+      background: #fff; border-radius: 8px;
+      padding: 36px; max-width: 760px; margin: 0 auto;
+    }
+    .overlay-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 28px;
+    }
+    .overlay-title { font-size: 20px; font-weight: 700; }
+    .close-overlay-btn {
+      background: transparent; border: none;
+      font-size: 24px; cursor: pointer; color: #888; line-height: 1;
+    }
+
+    /* ── Stock grid ── */
+    .stock-product-name {
+      font-size: 15px; font-weight: 700;
+      margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 2px solid #C9A96E;
+    }
+    .stock-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .stock-table th {
+      padding: 8px 12px; background: #F7F5F1;
+      text-align: left; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: #888; border-bottom: 1px solid #e0ddd8;
+    }
+    .stock-table td { padding: 10px 12px; border-bottom: 1px solid #f0ede8; }
+    .qty-cell {
+      cursor: pointer; font-weight: 700;
+      border-radius: 4px; padding: 4px 10px;
+      display: inline-block; min-width: 36px; text-align: center;
+    }
+    .qty-0   { background: #fdecea; color: #c0392b; }
+    .qty-low { background: #fef3e2; color: #d35400; }
+    .qty-ok  { background: #f0f9f0; color: #27ae60; }
+    .qty-input {
+      width: 70px; padding: 6px 8px;
+      border: 2px solid #C9A96E; border-radius: 4px;
+      font-size: 14px; font-weight: 700; text-align: center;
+    }
+
+    /* ── Maintenance toggle ── */
+    .toggle-wrap { display: flex; align-items: center; gap: 20px; }
+    .toggle { position: relative; width: 64px; height: 34px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: #ccc; border-radius: 34px;
+      cursor: pointer; transition: 0.3s;
+    }
+    .toggle-slider:before {
+      content: ''; position: absolute;
+      width: 26px; height: 26px; left: 4px; bottom: 4px;
+      background: #fff; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle input:checked + .toggle-slider { background: #c0392b; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(30px); }
+    .toggle-label { font-size: 16px; font-weight: 600; }
+    .toggle-desc { font-size: 13px; color: #888; margin-top: 4px; }
+
+    /* ── Alerts ── */
+    .alert { padding: 12px 16px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; }
+    .alert-success { background: #f0f9f0; border: 1px solid #a8d5a2; color: #27ae60; }
+    .alert-error   { background: #fdecea; border: 1px solid #e8b4b0; color: #c0392b; }
+
+    .low-stock-item { padding: 10px 0; border-bottom: 1px solid #f0ede8; font-size: 14px; }
+    .low-stock-item:last-child { border-bottom: none; }
+
+    .img-preview {
+      width: 60px; height: 60px; object-fit: cover;
+      border-radius: 4px; border: 1px solid #ddd; margin-top: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .tab-content { padding: 20px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .admin-nav { padding: 0 16px; }
+      .overlay { padding: 12px; }
+      .overlay-card { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Login ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Al Jamaal</div>
+    <div class="login-logo-sub">الجمال — Official</div>
+    <div class="login-title">Admin Access</div>
+    <input type="password" class="login-input" id="login-password" placeholder="Enter password">
+    <button class="login-btn" onclick="doLogin()">Login</button>
+    <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ── Dashboard ── -->
+<div id="dashboard">
+
+  <nav class="admin-nav">
+    <div class="admin-nav-brand">Al Jamaal <span>Admin Dashboard</span></div>
+    <button class="logout-btn" onclick="doLogout()">Log Out</button>
+  </nav>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('overview', this)">Overview</button>
+    <button class="tab-btn" onclick="showTab('products', this)">Products</button>
+    <button class="tab-btn" onclick="showTab('stock', this)">Stock</button>
+    <button class="tab-btn" onclick="showTab('settings', this)">Settings</button>
+  </div>
+
+  <!-- Overview -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="overview-grid">
+      <div class="card"><div class="card-title">Total Products</div><div class="card-value" id="stat-total">—</div></div>
+      <div class="card"><div class="card-title">Low Stock (≤3)</div><div class="card-value" id="stat-low" style="color:#d35400;">—</div></div>
+      <div class="card"><div class="card-title">Out of Stock</div><div class="card-value" id="stat-out" style="color:#c0392b;">—</div></div>
+      <div class="card"><div class="card-title">Maintenance</div><div class="card-value" id="stat-maint" style="font-size:22px;margin-top:4px;">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">Low Stock Alerts</div>
+      <div id="low-stock-list"><p style="color:#888;font-size:14px;">Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- Products -->
+  <div class="tab-content" id="tab-products">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:20px;font-weight:700;">Products</h2>
+      <button class="btn btn-primary" onclick="openProductForm(null)">+ Add Product</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Badge</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="products-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stock -->
+  <div class="tab-content" id="tab-stock">
+    <div style="margin-bottom:20px;">
+      <h2 style="font-size:20px;font-weight:700;">Stock Management</h2>
+      <p style="color:#888;font-size:14px;margin-top:6px;">Click any quantity to edit it inline.</p>
+    </div>
+    <div id="stock-list"><p style="color:#888;font-size:14px;">Loading...</p></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="tab-content" id="tab-settings">
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:24px;">Settings</h2>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:20px;">Maintenance Mode</div>
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" id="maint-toggle" onchange="setMaintenance(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <div class="toggle-label" id="maint-label">Loading...</div>
+          <div class="toggle-desc">When ON, visitors see a "We're making improvements" page. Admin still works normally.</div>
+        </div>
+      </div>
+      <div id="maint-alert" style="margin-top:20px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Product Form Overlay ── -->
+<div class="overlay" id="product-overlay">
+  <div class="overlay-card">
+    <div class="overlay-header">
+      <div class="overlay-title" id="overlay-title">Add Product</div>
+      <button class="close-overlay-btn" onclick="closeProductForm()">&#x2715;</button>
+    </div>
+
+    <div id="overlay-alert"></div>
+    <input type="hidden" id="pf-id">
+
+    <div class="form-section">
+      <div class="form-section-title">Basic Info</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input type="text" class="form-input" id="pf-name" placeholder="e.g. Original Burnoose">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-select" id="pf-category">
+            <option value="Men">Men</option>
+            <option value="Women">Women</option>
+            <option value="Kids">Kids</option>
+            <option value="Home & Gifts">Home &amp; Gifts</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Base Price (R) *</label>
+          <input type="number" class="form-input" id="pf-price" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Badge</label>
+          <select class="form-select" id="pf-badge">
+            <option value="">None</option>
+            <option value="New">New</option>
+            <option value="Sale">Sale</option>
+            <option value="Limited">Limited</option>
+            <option value="Sold Out">Sold Out</option>
+            <option value="Special">Special</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="pf-description" placeholder="Product description..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Images</div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Primary Image Path</label>
+        <input type="text" class="form-input" id="pf-image" placeholder="images/ProductM.jpg" oninput="updatePreview()">
+        <img id="pf-image-preview" class="img-preview" style="display:none;" alt="Preview">
+      </div>
+      <div class="form-label" style="margin-bottom:8px;">Additional Images</div>
+      <div id="pf-images-list"></div>
+      <button class="add-row-btn" onclick="addImageRow()">+ Add Image</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Sizes</div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Size Labels (e.g. Length, Chest)</label>
+        <div id="pf-size-labels-list"></div>
+        <button class="add-row-btn" onclick="addSizeLabelRow()">+ Add Label</button>
+      </div>
+      <div class="form-label" style="margin-bottom:8px;">Size Options (Name + Price)</div>
+      <div id="pf-sizes-list"></div>
+      <button class="add-row-btn" onclick="addSizeRow()">+ Add Size</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Colors</div>
+      <div id="pf-colors-list"></div>
+      <button class="add-row-btn" onclick="addColorRow()">+ Add Color</button>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+      <button class="btn btn-outline" onclick="closeProductForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
+  var adminKey = '';
+  var allProducts = [];
+  var allStock = {};
+
+  // ── Auth ──────────────────────────────────────────────────────
+
+  window.addEventListener('DOMContentLoaded', function() {
+    var saved = sessionStorage.getItem('aljamaal_admin_key');
+    if (saved) { adminKey = saved; showDashboard(); }
+    document.getElementById('login-password').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+
+  async function doLogin() {
+    var pw = document.getElementById('login-password').value.trim();
+    if (!pw) return;
+    try {
+      var res = await fetch(WORKER_URL + '/verify-admin', { method: 'POST', headers: { 'X-Admin-Key': pw } });
+      if (res.ok) {
+        adminKey = pw;
+        sessionStorage.setItem('aljamaal_admin_key', pw);
+        showDashboard();
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    } catch (e) {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('aljamaal_admin_key');
+    adminKey = '';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  function showDashboard() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadProducts().then(loadOverview);
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────
+
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'stock') loadStock();
+    if (name === 'settings') loadSettings();
+  }
+
+  // ── Overview ──────────────────────────────────────────────────
+
+  async function loadOverview() {
+    try {
+      var results = await Promise.all([
+        fetch(WORKER_URL + '/get-all-stock').then(function(r) { return r.json(); }),
+        fetch(WORKER_URL + '/maintenance-status').then(function(r) { return r.json(); })
+      ]);
+      var stockData = results[0];
+      var maintData = results[1];
+      allStock = stockData;
+
+      var lowCount = 0, outCount = 0, lowItems = [];
+
+      for (var pid in stockData) {
+        var pStock = stockData[pid];
+        var product = allProducts.find(function(p) { return p.id == pid; });
+        var name = product ? product.name : 'Product #' + pid;
+
+        if (pStock.__simple__ !== undefined) {
+          var q = pStock.__simple__;
+          if (q === 0) outCount++;
+          else if (q <= 3) { lowCount++; lowItems.push({ name: name, detail: '', qty: q }); }
+        } else {
+          for (var size in pStock) {
+            for (var color in pStock[size]) {
+              var q2 = pStock[size][color];
+              if (q2 === 0) outCount++;
+              else if (q2 <= 3) { lowCount++; lowItems.push({ name: name, detail: size + ' / ' + color, qty: q2 }); }
+            }
+          }
+        }
+      }
+
+      document.getElementById('stat-total').textContent = allProducts.length;
+      document.getElementById('stat-low').textContent = lowCount;
+      document.getElementById('stat-out').textContent = outCount;
+      document.getElementById('stat-maint').textContent = maintData.maintenance ? '🔴 ON' : '🟢 OFF';
+
+      var listEl = document.getElementById('low-stock-list');
+      if (lowItems.length === 0) {
+        listEl.innerHTML = '<p style="color:#888;font-size:14px;">No low stock items — all good!</p>';
+      } else {
+        var grouped = {};
+        lowItems.forEach(function(item) {
+          if (!grouped[item.name]) grouped[item.name] = [];
+          grouped[item.name].push(item);
+        });
+        listEl.innerHTML = Object.keys(grouped).map(function(name) {
+          var rows = grouped[name].map(function(item) {
+            var color = item.qty === 0 ? '#c0392b' : '#d35400';
+            return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f0;font-size:13px;">' +
+              '<span style="color:#555;">' + (item.detail || 'Stock') + '</span>' +
+              '<span style="font-weight:700;color:' + color + ';">' + item.qty + ' left</span>' +
+              '</div>';
+          }).join('');
+          return '<div style="margin-bottom:16px;">' +
+            '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + name + '</div>' +
+            rows + '</div>';
+        }).join('');
+      }
+    } catch (e) {
+      console.error('Overview load failed:', e);
+    }
+  }
+
+  // ── Products ──────────────────────────────────────────────────
+
+  async function loadProducts() {
+    try {
+      var res = await fetch(WORKER_URL + '/get-products');
+      allProducts = await res.json();
+      renderProductsTable();
+    } catch (e) {
+      document.getElementById('products-tbody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;padding:32px;color:#c0392b;">Failed to load products.</td></tr>';
+    }
+  }
+
+  function effectivePrice(p) {
+    if (p.sizes && p.sizes.length) {
+      var min = Math.min.apply(null, p.sizes.map(function(s) { return s.price; }));
+      var max = Math.max.apply(null, p.sizes.map(function(s) { return s.price; }));
+      return min === max ? 'R ' + min.toFixed(2) : 'From R ' + min.toFixed(2);
+    }
+    return p.price ? 'R ' + parseFloat(p.price).toFixed(2) : '—';
+  }
+
+  function renderProductsTable() {
+    var tbody = document.getElementById('products-tbody');
+    if (!allProducts.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">No products found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = allProducts.map(function(p) {
+      var safeName = p.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return '<tr>' +
+        '<td style="color:#888;">' + p.id + '</td>' +
+        '<td><strong>' + p.name + '</strong></td>' +
+        '<td>' + p.category + '</td>' +
+        '<td>' + effectivePrice(p) + '</td>' +
+        '<td>' + (p.badge ? '<span style="background:#F7F5F1;padding:3px 8px;border-radius:3px;font-size:12px;">' + p.badge + '</span>' : '—') + '</td>' +
+        '<td style="display:flex;gap:8px;">' +
+          '<button class="btn btn-outline btn-sm" onclick="openProductForm(' + p.id + ')">Edit</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + p.id + ', \'' + safeName + '\')">Delete</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  async function deleteProduct(id, name) {
+    if (!confirm('Delete "' + name + '"?\n\nThis hides the product from the site. It can be restored from the D1 console if needed.')) return;
+    try {
+      var res = await fetch(WORKER_URL + '/delete-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+        body: JSON.stringify({ id: id })
+      });
+      if (res.ok) { await loadProducts(); }
+      else { alert('Failed to delete product.'); }
+    } catch (e) { alert('Network error.'); }
+  }
+
+  // ── Product Form ──────────────────────────────────────────────
+
+  function openProductForm(id) {
+    document.getElementById('overlay-alert').innerHTML = '';
+    clearProductForm();
+
+    if (id === null) {
+      document.getElementById('overlay-title').textContent = 'Add Product';
+      document.getElementById('pf-id').value = '';
+    } else {
+      var p = allProducts.find(function(x) { return x.id === id; });
+      if (!p) return;
+      document.getElementById('overlay-title').textContent = 'Edit: ' + p.name;
+      document.getElementById('pf-id').value = p.id;
+      document.getElementById('pf-name').value = p.name;
+      document.getElementById('pf-category').value = p.category;
+      document.getElementById('pf-price').value = p.price;
+      document.getElementById('pf-badge').value = p.badge || '';
+      document.getElementById('pf-description').value = p.description || '';
+      document.getElementById('pf-image').value = p.image || '';
+      updatePreview();
+      (p.images || []).forEach(function(img) { addImageRow(img); });
+      (p.size_labels || []).forEach(function(lbl) { addSizeLabelRow(lbl); });
+      (p.sizes || []).forEach(function(s) { addSizeRow(s.size, s.price); });
+      (p.colors || []).forEach(function(c) { addColorRow(c); });
+    }
+    document.getElementById('product-overlay').classList.add('active');
+  }
+
+  function closeProductForm() {
+    document.getElementById('product-overlay').classList.remove('active');
+  }
+
+  function clearProductForm() {
+    ['pf-name','pf-price','pf-description','pf-image'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('pf-category').value = 'Men';
+    document.getElementById('pf-badge').value = '';
+    document.getElementById('pf-image-preview').style.display = 'none';
+    ['pf-images-list','pf-size-labels-list','pf-sizes-list','pf-colors-list'].forEach(function(id) {
+      document.getElementById(id).innerHTML = '';
+    });
+  }
+
+  function updatePreview() {
+    var path = document.getElementById('pf-image').value.trim();
+    var preview = document.getElementById('pf-image-preview');
+    if (path) { preview.src = path; preview.style.display = 'block'; }
+    else { preview.style.display = 'none'; }
+  }
+
+  function addImageRow(val) {
+    var div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = '<input type="text" placeholder="images/ProductS1.jpg" value="' + (val || '') + '">' +
+      '<button class="remove-row-btn" onclick="this.parentElement.remove()">&#x2715;</button>';
+    document.getElementById('pf-images-list').appendChild(div);
+  }
+
+  function addSizeLabelRow(val) {
+    var div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = '<input type="text" placeholder="e.g. Length" value="' + (val || '') + '">' +
+      '<button class="remove-row-btn" onclick="this.parentElement.remove()">&#x2715;</button>';
+    document.getElementById('pf-size-labels-list').appendChild(div);
+  }
+
+  function addSizeRow(name, price) {
+    var div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = '<input type="text" placeholder="e.g. 50 Small" value="' + (name || '') + '">' +
+      '<input type="number" class="price-input" placeholder="Price" value="' + (price || '') + '">' +
+      '<button class="remove-row-btn" onclick="this.parentElement.remove()">&#x2715;</button>';
+    document.getElementById('pf-sizes-list').appendChild(div);
+  }
+
+  function addColorRow(val) {
+    var div = document.createElement('div');
+    div.className = 'list-row';
+    div.innerHTML = '<input type="text" placeholder="e.g. Black" value="' + (val || '') + '">' +
+      '<button class="remove-row-btn" onclick="this.parentElement.remove()">&#x2715;</button>';
+    document.getElementById('pf-colors-list').appendChild(div);
+  }
+
+  async function saveProduct() {
+    var alertEl = document.getElementById('overlay-alert');
+    alertEl.innerHTML = '';
+
+    var name = document.getElementById('pf-name').value.trim();
+    var price = parseFloat(document.getElementById('pf-price').value);
+    if (!name) { alertEl.innerHTML = '<div class="alert alert-error">Product name is required.</div>'; return; }
+    if (isNaN(price)) { alertEl.innerHTML = '<div class="alert alert-error">Price is required.</div>'; return; }
+
+    var idVal = document.getElementById('pf-id').value;
+    var id = idVal ? parseInt(idVal) : Math.floor(Date.now() / 1000);
+
+    var images = Array.from(document.querySelectorAll('#pf-images-list .list-row input'))
+      .map(function(i) { return i.value.trim(); }).filter(Boolean);
+    var sizeLabels = Array.from(document.querySelectorAll('#pf-size-labels-list .list-row input'))
+      .map(function(i) { return i.value.trim(); }).filter(Boolean);
+    var sizes = Array.from(document.querySelectorAll('#pf-sizes-list .list-row')).map(function(row) {
+      var inputs = row.querySelectorAll('input');
+      return { size: inputs[0].value.trim(), price: parseFloat(inputs[1].value) || price };
+    }).filter(function(s) { return s.size; });
+    var colors = Array.from(document.querySelectorAll('#pf-colors-list .list-row input'))
+      .map(function(i) { return i.value.trim(); }).filter(Boolean);
+
+    var product = {
+      id: id,
+      name: name,
+      category: document.getElementById('pf-category').value,
+      price: price,
+      description: document.getElementById('pf-description').value.trim(),
+      badge: document.getElementById('pf-badge').value,
+      image: document.getElementById('pf-image').value.trim(),
+      images: images,
+      size_labels: sizeLabels,
+      sizes: sizes,
+      colors: colors,
+      sort_order: 0
+    };
+
+    try {
+      var res = await fetch(WORKER_URL + '/set-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+        body: JSON.stringify(product)
+      });
+      if (res.ok) {
+        alertEl.innerHTML = '<div class="alert alert-success">Product saved successfully!</div>';
+        await loadProducts();
+        setTimeout(closeProductForm, 900);
+      } else {
+        alertEl.innerHTML = '<div class="alert alert-error">Failed to save product.</div>';
+      }
+    } catch (e) {
+      alertEl.innerHTML = '<div class="alert alert-error">Network error. Please try again.</div>';
+    }
+  }
+
+  // ── Stock ─────────────────────────────────────────────────────
+
+  async function loadStock() {
+    var listEl = document.getElementById('stock-list');
+    listEl.innerHTML = '<p style="color:#888;font-size:14px;">Loading...</p>';
+    try {
+      var results = await Promise.all([
+        fetch(WORKER_URL + '/get-all-stock').then(function(r) { return r.json(); }),
+        fetch(WORKER_URL + '/get-products').then(function(r) { return r.json(); })
+      ]);
+      allStock = results[0];
+      allProducts = results[1];
+      renderStockList();
+    } catch (e) {
+      listEl.innerHTML = '<p style="color:#c0392b;font-size:14px;">Failed to load stock data.</p>';
+    }
+  }
+
+  function renderStockList() {
+    var listEl = document.getElementById('stock-list');
+    var pids = Object.keys(allStock);
+    if (!pids.length) {
+      listEl.innerHTML = '<p style="color:#888;font-size:14px;">No stock data found.</p>';
+      return;
+    }
+
+    var html = '';
+    pids.forEach(function(pid) {
+      var pStock = allStock[pid];
+      var product = allProducts.find(function(p) { return p.id == pid; });
+      var name = product ? product.name : 'Product #' + pid;
+
+      html += '<div class="card">';
+      html += '<div class="stock-product-name">' + name +
+        ' <span style="color:#aaa;font-size:12px;font-weight:400;">ID: ' + pid + '</span></div>';
+
+      if (pStock.__simple__ !== undefined) {
+        var q = pStock.__simple__;
+        html += '<table class="stock-table"><thead><tr><th>Total Stock</th></tr></thead><tbody>';
+        html += '<tr><td>' + qtyCell(q, pid, '__simple__', '__none__') + '</td></tr>';
+        html += '</tbody></table>';
+      } else {
+        var sizes = Object.keys(pStock);
+        var colorSet = {};
+        sizes.forEach(function(s) { Object.keys(pStock[s]).forEach(function(c) { colorSet[c] = 1; }); });
+        var colors = Object.keys(colorSet);
+
+        html += '<div style="overflow-x:auto;"><table class="stock-table"><thead><tr><th>Size</th>';
+        colors.forEach(function(c) { html += '<th>' + c + '</th>'; });
+        html += '</tr></thead><tbody>';
+
+        sizes.forEach(function(size) {
+          html += '<tr><td style="font-weight:600;white-space:nowrap;">' + size + '</td>';
+          colors.forEach(function(color) {
+            if (pStock[size] && pStock[size][color] !== undefined) {
+              html += '<td>' + qtyCell(pStock[size][color], pid, size, color) + '</td>';
+            } else {
+              html += '<td style="color:#ccc;">—</td>';
+            }
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+      html += '</div>';
+    });
+
+    listEl.innerHTML = html;
+  }
+
+  function qtyCell(qty, pid, stockKey, color) {
+    var cls = qty === 0 ? 'qty-0' : qty <= 3 ? 'qty-low' : 'qty-ok';
+    var skSafe = stockKey.replace(/'/g, '&#39;');
+    var cSafe  = color.replace(/'/g, '&#39;');
+    return '<span class="qty-cell ' + cls + '" ' +
+      'data-pid="' + pid + '" data-key="' + skSafe + '" data-color="' + cSafe + '" data-qty="' + qty + '" ' +
+      'onclick="editQty(this)">' + qty + '</span>';
+  }
+
+  function editQty(el) {
+    var pid      = el.getAttribute('data-pid');
+    var stockKey = el.getAttribute('data-key');
+    var color    = el.getAttribute('data-color');
+    var currentQty = parseInt(el.getAttribute('data-qty'));
+
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'qty-input';
+    input.value = currentQty;
+    input.min = 0;
+    el.replaceWith(input);
+    input.focus();
+    input.select();
+
+    async function save() {
+      var newQty = parseInt(input.value);
+      if (isNaN(newQty) || newQty < 0) { input.replaceWith(el); return; }
+      try {
+        await fetch(WORKER_URL + '/set-stock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+          body: JSON.stringify({ productId: parseInt(pid), stockKey: stockKey, color: color, qty: newQty })
+        });
+        if (!allStock[pid]) allStock[pid] = {};
+        if (stockKey === '__simple__') {
+          allStock[pid].__simple__ = newQty;
+        } else {
+          if (!allStock[pid][stockKey]) allStock[pid][stockKey] = {};
+          allStock[pid][stockKey][color] = newQty;
+        }
+        el.setAttribute('data-qty', newQty);
+        el.textContent = newQty;
+        var cls = newQty === 0 ? 'qty-0' : newQty <= 3 ? 'qty-low' : 'qty-ok';
+        el.className = 'qty-cell ' + cls;
+        input.replaceWith(el);
+      } catch (e) {
+        input.replaceWith(el);
+      }
+    }
+
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') input.replaceWith(el);
+    });
+  }
+
+  // ── Settings ──────────────────────────────────────────────────
+
+  async function loadSettings() {
+    try {
+      var res = await fetch(WORKER_URL + '/maintenance-status');
+      var data = await res.json();
+      document.getElementById('maint-toggle').checked = data.maintenance;
+      document.getElementById('maint-label').textContent = data.maintenance ? 'Maintenance is ON' : 'Maintenance is OFF';
+    } catch (e) {}
+  }
+
+  async function setMaintenance(on) {
+    var alertEl = document.getElementById('maint-alert');
+    document.getElementById('maint-label').textContent = on ? 'Maintenance is ON' : 'Maintenance is OFF';
+    try {
+      var res = await fetch(WORKER_URL + '/set-maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+        body: JSON.stringify({ on: on })
+      });
+      if (res.ok) {
+        alertEl.innerHTML = '<div class="alert alert-success">Maintenance mode ' + (on ? 'enabled' : 'disabled') + '.</div>';
+        setTimeout(function() { alertEl.innerHTML = ''; }, 3000);
+      }
+    } catch (e) {
+      alertEl.innerHTML = '<div class="alert alert-error">Failed to update. Please try again.</div>';
+    }
+  }
+</script>
+
+<div style="text-align:center;padding:32px 24px;border-top:1px solid #e5e7eb;margin-top:40px;">
+  <a href="index.html" target="_blank" style="display:inline-block;padding:10px 24px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;letter-spacing:0.5px;">View Live Site</a>
+</div>
+
+</body>
+</html>

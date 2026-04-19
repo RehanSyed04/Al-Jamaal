@@ -3,6 +3,16 @@
 
 <head>
   <meta charset="UTF-8">
+  <script>
+    (function() {
+      var p = window.location.pathname;
+      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('admin.html') !== -1) return;
+      fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
+        .catch(function() {});
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Checkout — Al Jamaal Official</title>
@@ -267,7 +277,7 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
-        <p>South Africa 🇿🇦</p>
+        <p>South Africa &nbsp;·&nbsp; <a href="admin.html" style="color:#aaa;font-size:12px;text-decoration:none;">Admin</a></p>
       </div>
     </div>
   </footer>

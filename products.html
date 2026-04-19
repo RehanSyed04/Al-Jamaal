@@ -3,6 +3,16 @@
 
 <head>
   <meta charset="UTF-8">
+  <script>
+    (function() {
+      var p = window.location.pathname;
+      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('admin.html') !== -1) return;
+      fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
+        .catch(function() {});
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Products — Al Jamaal Official</title>
@@ -112,13 +122,39 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
-        <p>South Africa 🇿🇦</p>
+        <p>South Africa &nbsp;·&nbsp; <a href="admin.html" style="color:#aaa;font-size:12px;text-decoration:none;">Admin</a></p>
       </div>
     </div>
   </footer>
 
   <script src="js/products-data.js?v=16"></script>
   <script src="js/script.js"></script>
+  <script>
+    (async function() {
+      try {
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products');
+        if (!res.ok) return;
+        var data = await res.json();
+        if (!data || !data.length) return;
+        products.splice(0, products.length, ...data);
+        var urlParams = new URLSearchParams(window.location.search);
+        var category = urlParams.get('category');
+        var toShow = category && category !== 'All'
+          ? products.filter(function(p) { return p.category === category; })
+          : products;
+        renderProductGrid('products-grid', toShow);
+        initCardSliderTouch(document.getElementById('products-grid'));
+        initCategoryFilter();
+        if (category) {
+          var btn = document.querySelector('.filter-btn[data-filter="' + category + '"]');
+          if (btn) {
+            document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+          }
+        }
+      } catch(e) {}
+    })();
+  </script>
 
 </body>
 </html>
