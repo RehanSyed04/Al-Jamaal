@@ -6,7 +6,7 @@
   <script>
     (function() {
       var p = window.location.pathname;
-      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('admin.html') !== -1) return;
+      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('dashboard.html') !== -1) return;
       fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
@@ -165,7 +165,7 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
-        <p>South Africa &nbsp;·&nbsp; <a href="admin.html" style="color:#aaa;font-size:12px;text-decoration:none;">Admin</a></p>
+        <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>

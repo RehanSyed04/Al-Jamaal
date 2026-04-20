@@ -6,7 +6,7 @@
   <script>
     (function() {
       var p = window.location.pathname;
-      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('admin.html') !== -1) return;
+      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('dashboard.html') !== -1) return;
       fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
@@ -277,7 +277,7 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
-        <p>South Africa &nbsp;·&nbsp; <a href="admin.html" style="color:#aaa;font-size:12px;text-decoration:none;">Admin</a></p>
+        <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>
@@ -287,24 +287,35 @@
   <script>
     const WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
 
-    // Parcel size categories by product ID
-    const SMALL_IDS  = [3, 7, 11, 12, 99]; // 99 = testing item
-    const MEDIUM_IDS = [5, 6, 8, 13];
+    // TCG minimum chargeable weight is 2kg; volumetric weight for large = 50×40×10÷5000 = 4kg
     const PARCEL_SIZES = {
-      small:  { submitted_length_cm: 30, submitted_width_cm: 20, submitted_height_cm: 5,  submitted_weight_kg: 0.5 },
-      medium: { submitted_length_cm: 40, submitted_width_cm: 30, submitted_height_cm: 8,  submitted_weight_kg: 1.0 },
-      large:  { submitted_length_cm: 50, submitted_width_cm: 40, submitted_height_cm: 10, submitted_weight_kg: 1.5 }
+      small:  { submitted_length_cm: 30, submitted_width_cm: 20, submitted_height_cm: 5,  submitted_weight_kg: 2.0 },
+      medium: { submitted_length_cm: 40, submitted_width_cm: 30, submitted_height_cm: 8,  submitted_weight_kg: 2.0 },
+      large:  { submitted_length_cm: 50, submitted_width_cm: 40, submitted_height_cm: 10, submitted_weight_kg: 4.0 }
     };
+
+    // Fallback parcel sizes for products not yet migrated to D1
+    const SMALL_IDS  = [3, 7, 11, 12, 99];
+    const MEDIUM_IDS = [5, 6, 8, 13];
 
     // TEST MODE — set to false before going live
     const TEST_MODE = false;
 
     let selectedShipping = null;
     let shippingDebounceTimer = null;
+    let productParcelMap = {}; // numeric productId -> parcel_size
+    const productParcelMapReady = fetch(WORKER_URL + '/get-products')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        data.forEach(function(p) { productParcelMap[p.id] = p.parcel_size || 'large'; });
+      })
+      .catch(function() {});
 
-    function getParcelSizeKey(productId) {
-      if (SMALL_IDS.includes(productId))  return 'small';
-      if (MEDIUM_IDS.includes(productId)) return 'medium';
+    function getParcelSizeKey(cartItemId) {
+      var baseId = parseInt(cartItemId); // strips any "-size-colour" suffix
+      if (productParcelMap[baseId]) return productParcelMap[baseId];
+      if (SMALL_IDS.includes(baseId))  return 'small';
+      if (MEDIUM_IDS.includes(baseId)) return 'medium';
       return 'large';
     }
 
@@ -371,6 +382,7 @@
       updateOrderTotals();
 
       try {
+        await productParcelMapReady;
         const res = await fetch(`${WORKER_URL}/rates`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

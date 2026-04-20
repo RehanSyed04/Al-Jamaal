@@ -6,7 +6,7 @@
   <script>
     (function() {
       var p = window.location.pathname;
-      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('admin.html') !== -1) return;
+      if (p.indexOf('maintenance.html') !== -1 || p.indexOf('dashboard.html') !== -1) return;
       fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
@@ -129,7 +129,7 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
-        <p>South Africa &nbsp;·&nbsp; <a href="admin.html" style="color:#aaa;font-size:12px;text-decoration:none;">Admin</a></p>
+        <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>
@@ -139,15 +139,32 @@
   <script>
     const dualSelectorIds = [1, 2, 3, 6, 10, 11, 18, 19, 20, 21, 22, 99];
 
-    // Get the product id from the URL, e.g. product.html?id=3
     const params = new URLSearchParams(window.location.search);
     const productId = parseInt(params.get('id'));
-    const product = products.find(p => p.id === productId);
+    let product = null;
 
-    if (!product) {
-      // If no valid product found, send user back to products page
-      window.location.href = 'products.html';
-    } else {
+    (async function() {
+      product = products.find(p => p.id === productId);
+
+      if (!product) {
+        try {
+          var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products',
+            { signal: AbortSignal.timeout(5000) });
+          if (res.ok) {
+            var data = await res.json();
+            products.splice(0, products.length, ...data);
+            product = products.find(p => p.id === productId);
+            if (product && product.size_labels && !product.sizeLabels) product.sizeLabels = product.size_labels;
+          }
+        } catch(e) {}
+      }
+
+      if (!product) {
+        window.location.href = 'products.html';
+        return;
+      }
+
+      {
       // Update page title
       document.title = `${product.name} — Al Jamaal Official`;
 
@@ -204,7 +221,7 @@
       // Build size selector HTML separately to avoid nested template literal issues
       let sizeHTML = '';
       if (product.sizes) {
-        if (dualSelectorIds.includes(product.id)) {
+        if (dualSelectorIds.includes(product.id) || product.bubble_selector) {
           sizeHTML = buildDualSizeSelector(product.sizes, product.sizeLabels);
         } else {
           const options = product.sizes.map(s => '<option value="' + s.size + '" data-price="' + s.price + '">' + s.size + ' \u2014 R ' + s.price.toFixed(2) + '</option>').join('');
@@ -282,7 +299,8 @@
       updateStockUI();
       fetchLiveStock();
       fetchLiveProduct();
-    }
+      }
+    })();
 
     async function fetchLiveProduct() {
       try {
@@ -293,6 +311,7 @@
         var live = data.find(function(p) { return p.id === productId; });
         if (!live) return;
         Object.assign(product, live);
+        if (live.size_labels && !live.sizeLabels) product.sizeLabels = live.size_labels;
         document.title = product.name + ' — Al Jamaal Official';
         var bn = document.getElementById('breadcrumb-name');
         if (bn) bn.textContent = product.name;
@@ -302,6 +321,15 @@
         if (name) name.textContent = product.name;
         var desc = document.querySelector('.product-detail-desc');
         if (desc) desc.innerHTML = product.description;
+        var priceEl = document.getElementById('product-detail-price');
+        if (priceEl) {
+          if (product.sizes && product.sizes.length > 0) {
+            var minP = Math.min.apply(null, product.sizes.map(function(s) { return s.price; }));
+            priceEl.textContent = 'From R ' + minP.toFixed(2);
+          } else if (product.price > 0) {
+            priceEl.textContent = 'R ' + product.price.toFixed(2);
+          }
+        }
         var actionsEl = document.querySelector('.product-detail-actions');
         if (actionsEl && product.badge === 'Sold Out') {
           actionsEl.innerHTML = '<button class="btn btn-primary" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled>Sold Out</button><a href="cart.html" class="btn btn-dark" style="flex:1;text-align:center;">View Cart</a>';
@@ -319,8 +347,7 @@
         );
         if (!res.ok) throw new Error('HTTP ' + res.status);
         var data = await res.json();
-        if (data.stock === null || data.stock === undefined) return;
-        product.stock = data.stock;
+        product.stock = (data.stock === null || data.stock === undefined) ? 0 : data.stock;
         updateStockUI();
       } catch (err) {
         console.warn('Live stock fetch failed, using static data:', err.message);
@@ -344,6 +371,7 @@
       const opt = select.options[select.selectedIndex];
       const priceEl = document.getElementById('product-detail-price');
       if (opt && opt.dataset.price) priceEl.textContent = 'R ' + parseFloat(opt.dataset.price).toFixed(2);
+      updateStockUI();
     }
 
     // ── Dual size selector ────────────────────────────────────
@@ -400,6 +428,14 @@
       var s = window._singleSizes[idx];
       var btn = document.querySelector('.size-btn[data-idx="' + idx + '"]');
       if (btn && btn.dataset.unavailable) return;
+      if (btn && btn.classList.contains('active')) {
+        btn.classList.remove('active');
+        window._selectedLength = null;
+        window._selectedChest = null;
+        document.getElementById('selected-length-label').textContent = '';
+        updateStockUI();
+        return;
+      }
       window._selectedLength = s.size;
       window._selectedChest = null;
       document.querySelectorAll('.size-btn[data-idx]').forEach(function(b) { b.classList.remove('active'); });
@@ -412,6 +448,18 @@
     function selectLength(len) {
       var lenBtn = document.querySelector('.size-btn[data-length="' + len + '"]');
       if (lenBtn && lenBtn.dataset.unavailable) return;
+      if (lenBtn && lenBtn.classList.contains('active')) {
+        lenBtn.classList.remove('active');
+        window._selectedLength = null;
+        window._selectedChest = null;
+        document.getElementById('selected-length-label').textContent = '';
+        var chestLabelEl2 = document.getElementById('selected-chest-label');
+        if (chestLabelEl2) chestLabelEl2.textContent = '';
+        var chestSec = document.getElementById('chest-section');
+        if (chestSec) chestSec.style.display = 'none';
+        updateStockUI();
+        return;
+      }
       document.querySelectorAll('.size-btn[data-length]').forEach(function(b) { b.classList.remove('active'); });
       lenBtn.classList.add('active');
       document.getElementById('selected-length-label').textContent = len;
@@ -442,6 +490,13 @@
     function selectChest(chest) {
       var chestBtn = document.querySelector('.size-btn[data-chest="' + chest + '"]');
       if (chestBtn && chestBtn.dataset.unavailable) return;
+      if (chestBtn && chestBtn.classList.contains('active')) {
+        chestBtn.classList.remove('active');
+        window._selectedChest = null;
+        document.getElementById('selected-chest-label').textContent = '';
+        updateStockUI();
+        return;
+      }
       document.querySelectorAll('.size-btn[data-chest]').forEach(function(b) { b.classList.remove('active'); });
       chestBtn.classList.add('active');
       document.getElementById('selected-chest-label').textContent = chest;
@@ -454,7 +509,15 @@
 
     function selectColor(color) {
       var btn = document.querySelector('.size-btn[data-color="' + color + '"]');
-      if (btn && btn.dataset.unavailable) return; // ignore clicks on crossed-out colours
+      if (btn && btn.dataset.unavailable) return;
+      if (btn && btn.classList.contains('active')) {
+        btn.classList.remove('active');
+        window._selectedColor = null;
+        var labelEl2 = document.getElementById('selected-color-label');
+        if (labelEl2) labelEl2.textContent = '';
+        updateStockUI();
+        return;
+      }
       window._selectedColor = color;
       document.querySelectorAll('.size-btn[data-color]').forEach(function(b) { b.classList.remove('active'); });
       if (btn) btn.classList.add('active');
@@ -464,12 +527,19 @@
     }
 
     function getStockKey() {
-      if (!product.stock || !window._selectedLength) return null;
-      var len = window._selectedLength;
-      var chest = window._selectedChest;
-      var fullKey = chest ? len + ' ' + chest : len;
-      if (product.stock[fullKey] !== undefined) return fullKey;
-      if (product.stock[len] !== undefined) return len;
+      if (!product.stock) return null;
+      // Dual selector (length + chest)
+      if (window._selectedLength) {
+        var len = window._selectedLength;
+        var chest = window._selectedChest;
+        var fullKey = chest ? len + ' ' + chest : len;
+        if (product.stock[fullKey] !== undefined) return fullKey;
+        if (product.stock[len] !== undefined) return len;
+        return null;
+      }
+      // Regular dropdown
+      var select = document.getElementById('detail-size');
+      if (select && select.value) return select.value;
       return null;
     }
 
@@ -591,7 +661,7 @@
     }
 
     function updateStockUI() {
-      if (!product.stock) return;
+      if (product.stock === undefined || product.stock === null) return;
       // Simple flat stock (no sizes/colours) — e.g. block sets
       if (typeof product.stock === 'number') {
         var statusEl = document.getElementById('stock-status');
@@ -666,11 +736,10 @@
 
         // Size selection — only for products that have sizes
         if (product.sizes && product.sizes.length > 0) {
-          const len = window._selectedLength;
-          if (!len) { alert('Please select a size.'); return; }
-
-          const isDual = product.sizeLabels && product.sizeLabels.length >= 2;
+          const isDual = dualSelectorIds.includes(product.id) || product.bubble_selector;
           if (isDual) {
+            const len = window._selectedLength;
+            if (!len) { alert('Please select a size.'); return; }
             const chest = window._selectedChest;
             const data = window._burnooseSizeData[len];
             if (!data) { alert('Please select a valid size.'); return; }
@@ -679,8 +748,17 @@
             cartId += '-' + sizeLabel;
             cartName += ' (Size ' + sizeLabel + ')';
             cartPrice = chest ? data[chest] : data._standalone;
-          } else {
+          } else if (window._selectedLength) {
+            const len = window._selectedLength;
             const sizeObj = (window._singleSizes || []).find(function(s) { return s.size === len; });
+            cartId += '-' + len;
+            cartName += ' (Size ' + len + ')';
+            if (sizeObj) cartPrice = sizeObj.price;
+          } else {
+            const select = document.getElementById('detail-size');
+            const len = select ? select.value : '';
+            if (!len) { alert('Please select a size.'); return; }
+            const sizeObj = product.sizes.find(function(s) { return s.size === len; });
             cartId += '-' + len;
             cartName += ' (Size ' + len + ')';
             if (sizeObj) cartPrice = sizeObj.price;

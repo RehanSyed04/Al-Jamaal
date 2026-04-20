@@ -71,16 +71,16 @@ Stylesheet links use `?v=N` query param (e.g. `?v=13`). Increment when making br
 ### Parcel Size Categories (used in checkout.html for TCG shipping)
 | Category | Product IDs | Dimensions (L×W×H cm) | Weight (kg) |
 |---|---|---|---|
-| Small | 3, 7, 11, 12 | 30 × 20 × 5 | 0.5 |
-| Medium | 5, 6, 8, 13 | 40 × 30 × 8 | 1.0 |
-| Large | all others | 50 × 40 × 10 | 1.5 |
+| Small | 3, 7, 11, 12 | 30 × 20 × 5 | 2.0 (TCG min) |
+| Medium | 5, 6, 8, 13 | 40 × 30 × 8 | 2.0 (TCG min) |
+| Large | all others | 50 × 40 × 10 | 4.0 (volumetric) |
 
 ### aljamaal_last_order Structure
 ```json
 {
   "delivery_address": { "type": "residential", "street_address": "...", "local_area": "...", "city": "...", "zone": "...", "country": "ZA", "code": "..." },
   "delivery_contact": { "name": "...", "mobile_number": "...", "email": "..." },
-  "parcels": [{ "submitted_length_cm": 30, "submitted_width_cm": 20, "submitted_height_cm": 5, "submitted_weight_kg": 0.5 }],
+  "parcels": [{ "submitted_length_cm": 30, "submitted_width_cm": 20, "submitted_height_cm": 5, "submitted_weight_kg": 2.0 }],
   "shipping": { "code": "ECO", "rate": 95.00, "name": "Economy" },
   "subtotal": 950.00,
   "grand_total": 1045.00

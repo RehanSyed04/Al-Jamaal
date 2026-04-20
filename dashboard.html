@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Al Jamaal Official</title>
+  <title>Dashboard — Al Jamaal Official</title>
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -233,6 +233,10 @@
       border: 2px solid #C9A96E; border-radius: 4px;
       font-size: 14px; font-weight: 700; text-align: center;
     }
+    .stock-card-body { overflow: hidden; transition: max-height 0.4s ease; max-height: 20000px; }
+    .stock-card-body.collapsed { max-height: 0; }
+    .overview-group-body { overflow: hidden; transition: max-height 0.4s ease; max-height: 20000px; }
+    .overview-group-body.collapsed { max-height: 0; }
 
     /* ── Maintenance toggle ── */
     .toggle-wrap { display: flex; align-items: center; gap: 20px; }
@@ -308,12 +312,28 @@
   <div class="tab-content active" id="tab-overview">
     <div class="overview-grid">
       <div class="card"><div class="card-title">Total Products</div><div class="card-value" id="stat-total">—</div></div>
-      <div class="card"><div class="card-title">Low Stock (≤3)</div><div class="card-value" id="stat-low" style="color:#d35400;">—</div></div>
+      <div class="card"><div class="card-title">Low Stock (≤5)</div><div class="card-value" id="stat-low" style="color:#d35400;">—</div></div>
       <div class="card"><div class="card-title">Out of Stock</div><div class="card-value" id="stat-out" style="color:#c0392b;">—</div></div>
       <div class="card"><div class="card-title">Maintenance</div><div class="card-value" id="stat-maint" style="font-size:22px;margin-top:4px;">—</div></div>
     </div>
     <div class="card">
-      <div class="card-title" style="margin-bottom:16px;">Low Stock Alerts</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0;">Out of Stock</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="collapseAll('out-stock-list')">Collapse All</button>
+          <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="expandAll('out-stock-list')">Expand All</button>
+        </div>
+      </div>
+      <div id="out-stock-list"><p style="color:#888;font-size:14px;">Loading...</p></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0;">Low Stock Alerts</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="collapseAll('low-stock-list')">Collapse All</button>
+          <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="expandAll('low-stock-list')">Expand All</button>
+        </div>
+      </div>
       <div id="low-stock-list"><p style="color:#888;font-size:14px;">Loading...</p></div>
     </div>
   </div>
@@ -322,13 +342,16 @@
   <div class="tab-content" id="tab-products">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h2 style="font-size:20px;font-weight:700;">Products</h2>
-      <button class="btn btn-primary" onclick="openProductForm(null)">+ Add Product</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline" id="refresh-products-btn" onclick="refreshProductsBtn()">↻ Refresh</button>
+        <button class="btn btn-primary" onclick="openProductForm(null)">+ Add Product</button>
+      </div>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Badge</th><th>Actions</th>
+            <th style="width:32px;"></th><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Badge</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="products-tbody">
@@ -340,9 +363,15 @@
 
   <!-- Stock -->
   <div class="tab-content" id="tab-stock">
-    <div style="margin-bottom:20px;">
-      <h2 style="font-size:20px;font-weight:700;">Stock Management</h2>
-      <p style="color:#888;font-size:14px;margin-top:6px;">Click any quantity to edit it inline.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;">Stock Management</h2>
+        <p style="color:#888;font-size:14px;margin-top:6px;">Click any quantity to edit it inline.</p>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="collapseAll('stock-list')">Collapse All</button>
+        <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="expandAll('stock-list')">Expand All</button>
+      </div>
     </div>
     <div id="stock-list"><p style="color:#888;font-size:14px;">Loading...</p></div>
   </div>
@@ -364,6 +393,13 @@
       </div>
       <div id="maint-alert" style="margin-top:20px;"></div>
     </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="margin-bottom:8px;">Seed Stock from products-data.js</div>
+      <p style="font-size:13px;color:#666;margin-bottom:16px;">Writes every size × colour combination from products-data.js into D1. Items with stock get their quantity; items missing from the stock object are set to 0 (out of stock). Safe to run multiple times — existing values are overwritten.</p>
+      <button class="btn btn-primary" onclick="seedStock()">Run Stock Seed</button>
+      <div id="seed-alert" style="margin-top:16px;"></div>
+    </div>
   </div>
 
 </div>
@@ -378,6 +414,11 @@
 
     <div id="overlay-alert"></div>
     <input type="hidden" id="pf-id">
+    <div id="pf-id-row" style="display:none; margin-bottom:16px;">
+      <label class="form-label">Product ID</label>
+      <input type="number" class="form-input" id="pf-id-visible" placeholder="Auto-generated" min="1" style="width:200px;">
+      <p style="font-size:12px; color:#888; margin-top:4px;">Leave blank to auto-generate. Cannot be changed after saving.</p>
+    </div>
 
     <div class="form-section">
       <div class="form-section-title">Basic Info</div>
@@ -413,6 +454,17 @@
           </select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Parcel Size (for shipping)</label>
+          <select class="form-select" id="pf-parcel-size">
+            <option value="large">Large — 50×40×10cm / 4.0kg</option>
+            <option value="medium">Medium — 40×30×8cm / 2.0kg</option>
+            <option value="small">Small — 30×20×5cm / 2.0kg</option>
+          </select>
+        </div>
+        <input type="hidden" id="pf-sort-order" value="0">
+      </div>
       <div class="form-row single">
         <div class="form-group">
           <label class="form-label">Description</label>
@@ -443,6 +495,13 @@
       <div class="form-label" style="margin-bottom:8px;">Size Options (Name + Price)</div>
       <div id="pf-sizes-list"></div>
       <button class="add-row-btn" onclick="addSizeRow()">+ Add Size</button>
+      <div style="margin-top:14px;padding:12px 14px;background:#F7F5F1;border-radius:4px;display:flex;align-items:flex-start;gap:12px;">
+        <input type="checkbox" id="pf-bubble-selector" style="margin-top:3px;width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <div>
+          <label for="pf-bubble-selector" style="font-size:13px;font-weight:700;cursor:pointer;">Use bubble size selector</label>
+          <p style="font-size:12px;color:#888;margin-top:3px;line-height:1.5;">Shows sizes as clickable buttons instead of a dropdown. For clothing with Length + Chest, name each size option as a combination e.g. "50 Small", "52 Large".</p>
+        </div>
+      </div>
     </div>
 
     <div class="form-section">
@@ -451,6 +510,7 @@
       <button class="add-row-btn" onclick="addColorRow()">+ Add Color</button>
     </div>
 
+    <div id="overlay-alert-bottom" style="margin-bottom:12px;"></div>
     <div style="display:flex;gap:12px;margin-top:8px;">
       <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
       <button class="btn btn-outline" onclick="closeProductForm()">Cancel</button>
@@ -458,6 +518,7 @@
   </div>
 </div>
 
+<script src="js/products-data.js?v=16"></script>
 <script>
   var WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
   var adminKey = '';
@@ -503,7 +564,7 @@
   function showDashboard() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    loadProducts().then(loadOverview);
+    loadProducts().then(function() { loadOverview(); });
   }
 
   // ── Tabs ──────────────────────────────────────────────────────
@@ -513,6 +574,7 @@
     document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
+    if (name === 'overview') loadOverview();
     if (name === 'stock') loadStock();
     if (name === 'settings') loadSettings();
   }
@@ -529,32 +591,61 @@
       var maintData = results[1];
       allStock = stockData;
 
-      var lowCount = 0, outCount = 0, lowItems = [];
+      var lowCount = 0, outCount = 0, lowItems = [], outItems = [];
 
       for (var pid in stockData) {
         var pStock = stockData[pid];
-        var product = allProducts.find(function(p) { return p.id == pid; });
-        var name = product ? product.name : 'Product #' + pid;
+        var product = allProducts.find(function(p) { return p.id === parseInt(pid); });
+        if (!product) continue;
+        var name = product.name;
 
         if (pStock.__simple__ !== undefined) {
           var q = pStock.__simple__;
-          if (q === 0) outCount++;
-          else if (q <= 3) { lowCount++; lowItems.push({ name: name, detail: '', qty: q }); }
+          if (q === 0) { outCount++; outItems.push({ pid: parseInt(pid), name: name, detail: '' }); }
+          else if (q <= 5) { lowCount++; lowItems.push({ pid: parseInt(pid), name: name, detail: '', qty: q }); }
         } else {
           for (var size in pStock) {
             for (var color in pStock[size]) {
               var q2 = pStock[size][color];
-              if (q2 === 0) outCount++;
-              else if (q2 <= 3) { lowCount++; lowItems.push({ name: name, detail: size + ' / ' + color, qty: q2 }); }
+              if (q2 === 0) { outCount++; outItems.push({ pid: parseInt(pid), name: name, detail: size + ' / ' + color }); }
+              else if (q2 <= 5) { lowCount++; lowItems.push({ pid: parseInt(pid), name: name, detail: size + ' / ' + color, qty: q2 }); }
             }
           }
         }
       }
 
+      outItems.sort(function(a, b) { return a.pid - b.pid; });
+      lowItems.sort(function(a, b) { return a.pid - b.pid; });
+
       document.getElementById('stat-total').textContent = allProducts.length;
       document.getElementById('stat-low').textContent = lowCount;
       document.getElementById('stat-out').textContent = outCount;
       document.getElementById('stat-maint').textContent = maintData.maintenance ? '🔴 ON' : '🟢 OFF';
+
+      var outListEl = document.getElementById('out-stock-list');
+      if (outItems.length === 0) {
+        outListEl.innerHTML = '<p style="color:#888;font-size:14px;">No out of stock items — all good!</p>';
+      } else {
+        var outGrouped = {};
+        outItems.forEach(function(item) {
+          if (!outGrouped[item.name]) outGrouped[item.name] = [];
+          outGrouped[item.name].push(item);
+        });
+        outListEl.innerHTML = Object.keys(outGrouped).map(function(name) {
+          var rows = outGrouped[name].map(function(item) {
+            return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f0;font-size:13px;">' +
+              '<span style="color:#555;">' + (item.detail || 'Stock') + '</span>' +
+              '<span style="font-weight:700;color:#c0392b;">Out of stock</span>' +
+              '</div>';
+          }).join('');
+          return '<div style="margin-bottom:16px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;margin-bottom:6px;cursor:pointer;" onclick="toggleOverviewGroup(this)">' +
+              '<span>' + name + '</span><span style="font-size:14px;color:#aaa;">&#9660;</span>' +
+            '</div>' +
+            '<div class="overview-group-body collapsed">' + rows + '</div>' +
+          '</div>';
+        }).join('');
+      }
 
       var listEl = document.getElementById('low-stock-list');
       if (lowItems.length === 0) {
@@ -567,15 +658,17 @@
         });
         listEl.innerHTML = Object.keys(grouped).map(function(name) {
           var rows = grouped[name].map(function(item) {
-            var color = item.qty === 0 ? '#c0392b' : '#d35400';
             return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f0;font-size:13px;">' +
               '<span style="color:#555;">' + (item.detail || 'Stock') + '</span>' +
-              '<span style="font-weight:700;color:' + color + ';">' + item.qty + ' left</span>' +
+              '<span style="font-weight:700;color:#d35400;">' + item.qty + ' left</span>' +
               '</div>';
           }).join('');
           return '<div style="margin-bottom:16px;">' +
-            '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + name + '</div>' +
-            rows + '</div>';
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;margin-bottom:6px;cursor:pointer;" onclick="toggleOverviewGroup(this)">' +
+              '<span>' + name + '</span><span style="font-size:14px;color:#aaa;">&#9660;</span>' +
+            '</div>' +
+            '<div class="overview-group-body collapsed">' + rows + '</div>' +
+          '</div>';
         }).join('');
       }
     } catch (e) {
@@ -585,14 +678,25 @@
 
   // ── Products ──────────────────────────────────────────────────
 
+  async function refreshProductsBtn() {
+    var btn = document.getElementById('refresh-products-btn');
+    btn.textContent = 'Loading...';
+    btn.disabled = true;
+    await loadProducts();
+    btn.textContent = '↻ Refresh (' + allProducts.length + ')';
+    btn.disabled = false;
+    setTimeout(function() { btn.textContent = '↻ Refresh'; }, 3000);
+  }
+
   async function loadProducts() {
     try {
-      var res = await fetch(WORKER_URL + '/get-products');
+      var res = await fetch(WORKER_URL + '/get-products?t=' + Date.now());
       allProducts = await res.json();
+      allProducts.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id; });
       renderProductsTable();
     } catch (e) {
       document.getElementById('products-tbody').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;padding:32px;color:#c0392b;">Failed to load products.</td></tr>';
+        '<tr><td colspan="7" style="text-align:center;padding:32px;color:#c0392b;">Failed to load products.</td></tr>';
     }
   }
 
@@ -605,15 +709,22 @@
     return p.price ? 'R ' + parseFloat(p.price).toFixed(2) : '—';
   }
 
+  var dragSrcIndex = null;
+
   function renderProductsTable() {
     var tbody = document.getElementById('products-tbody');
     if (!allProducts.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">No products found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#888;">No products found.</td></tr>';
       return;
     }
-    tbody.innerHTML = allProducts.map(function(p) {
+    tbody.innerHTML = allProducts.map(function(p, i) {
       var safeName = p.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      return '<tr>' +
+      return '<tr draggable="true" data-index="' + i + '" ' +
+        'ondragstart="dragStart(event,' + i + ')" ' +
+        'ondragover="dragOver(event)" ' +
+        'ondragleave="dragLeave(event)" ' +
+        'ondrop="dragDrop(event,' + i + ')">' +
+        '<td style="cursor:grab;color:#bbb;font-size:20px;user-select:none;padding:14px 8px 14px 16px;" title="Drag to reorder">⠿</td>' +
         '<td style="color:#888;">' + p.id + '</td>' +
         '<td><strong>' + p.name + '</strong></td>' +
         '<td>' + p.category + '</td>' +
@@ -625,6 +736,45 @@
         '</td>' +
       '</tr>';
     }).join('');
+  }
+
+  function dragStart(e, index) {
+    dragSrcIndex = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.4';
+  }
+
+  function dragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.style.borderTop = '2px solid #C9A96E';
+  }
+
+  function dragLeave(e) {
+    e.currentTarget.style.borderTop = '';
+  }
+
+  async function dragDrop(e, targetIndex) {
+    e.preventDefault();
+    e.currentTarget.style.borderTop = '';
+    if (dragSrcIndex === null || dragSrcIndex === targetIndex) { dragSrcIndex = null; return; }
+    var moved = allProducts.splice(dragSrcIndex, 1)[0];
+    allProducts.splice(targetIndex, 0, moved);
+    allProducts.forEach(function(p, i) { p.sort_order = i; });
+    dragSrcIndex = null;
+    renderProductsTable();
+    await saveSortOrders();
+  }
+
+  async function saveSortOrders() {
+    var orders = allProducts.map(function(p) { return { id: p.id, sort_order: p.sort_order }; });
+    try {
+      await fetch(WORKER_URL + '/set-sort-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+        body: JSON.stringify({ orders: orders })
+      });
+    } catch(e) {}
   }
 
   async function deleteProduct(id, name) {
@@ -648,18 +798,25 @@
 
     if (id === null) {
       document.getElementById('overlay-title').textContent = 'Add Product';
+      var nextId = allProducts.length ? Math.max.apply(null, allProducts.map(function(x) { return x.id; })) + 1 : 1;
       document.getElementById('pf-id').value = '';
+      document.getElementById('pf-id-visible').value = nextId;
+      document.getElementById('pf-id-row').style.display = 'block';
     } else {
       var p = allProducts.find(function(x) { return x.id === id; });
       if (!p) return;
       document.getElementById('overlay-title').textContent = 'Edit: ' + p.name;
       document.getElementById('pf-id').value = p.id;
+      document.getElementById('pf-id-row').style.display = 'none';
       document.getElementById('pf-name').value = p.name;
       document.getElementById('pf-category').value = p.category;
       document.getElementById('pf-price').value = p.price;
       document.getElementById('pf-badge').value = p.badge || '';
       document.getElementById('pf-description').value = p.description || '';
       document.getElementById('pf-image').value = p.image || '';
+      document.getElementById('pf-parcel-size').value = p.parcel_size || 'large';
+      document.getElementById('pf-sort-order').value = p.sort_order || 0;
+      document.getElementById('pf-bubble-selector').checked = !!p.bubble_selector;
       updatePreview();
       (p.images || []).forEach(function(img) { addImageRow(img); });
       (p.size_labels || []).forEach(function(lbl) { addSizeLabelRow(lbl); });
@@ -674,11 +831,15 @@
   }
 
   function clearProductForm() {
-    ['pf-name','pf-price','pf-description','pf-image'].forEach(function(id) {
+    showSaveMsg('');
+    ['pf-name','pf-price','pf-description','pf-image','pf-id-visible'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('pf-category').value = 'Men';
     document.getElementById('pf-badge').value = '';
+    document.getElementById('pf-parcel-size').value = 'large';
+    document.getElementById('pf-sort-order').value = 0;
+    document.getElementById('pf-bubble-selector').checked = false;
     document.getElementById('pf-image-preview').style.display = 'none';
     ['pf-images-list','pf-size-labels-list','pf-sizes-list','pf-colors-list'].forEach(function(id) {
       document.getElementById(id).innerHTML = '';
@@ -712,7 +873,7 @@
     var div = document.createElement('div');
     div.className = 'list-row';
     div.innerHTML = '<input type="text" placeholder="e.g. 50 Small" value="' + (name || '') + '">' +
-      '<input type="number" class="price-input" placeholder="Price" value="' + (price || '') + '">' +
+      '<input type="number" class="price-input" placeholder="Price" min="0" value="' + (price !== undefined ? price : '') + '">' +
       '<button class="remove-row-btn" onclick="this.parentElement.remove()">&#x2715;</button>';
     document.getElementById('pf-sizes-list').appendChild(div);
   }
@@ -725,17 +886,26 @@
     document.getElementById('pf-colors-list').appendChild(div);
   }
 
+  function showSaveMsg(html) {
+    var el = document.getElementById('overlay-alert-bottom');
+    if (el) el.innerHTML = html;
+  }
+
   async function saveProduct() {
-    var alertEl = document.getElementById('overlay-alert');
-    alertEl.innerHTML = '';
+    showSaveMsg('<div class="alert">Saving...</div>');
 
     var name = document.getElementById('pf-name').value.trim();
     var price = parseFloat(document.getElementById('pf-price').value);
-    if (!name) { alertEl.innerHTML = '<div class="alert alert-error">Product name is required.</div>'; return; }
-    if (isNaN(price)) { alertEl.innerHTML = '<div class="alert alert-error">Price is required.</div>'; return; }
+    if (!name) { showSaveMsg('<div class="alert alert-error">Product name is required.</div>'); return; }
+    if (isNaN(price)) price = 0;
 
     var idVal = document.getElementById('pf-id').value;
-    var id = idVal ? parseInt(idVal) : Math.floor(Date.now() / 1000);
+    var customId = document.getElementById('pf-id-visible').value.trim();
+    var id = idVal ? parseInt(idVal) : (customId ? parseInt(customId) : Math.floor(Date.now() / 1000));
+    if (!idVal && allProducts.some(function(x) { return x.id === id; })) {
+      showSaveMsg('<div class="alert alert-error">ID ' + id + ' already in use.</div>');
+      return;
+    }
 
     var images = Array.from(document.querySelectorAll('#pf-images-list .list-row input'))
       .map(function(i) { return i.value.trim(); }).filter(Boolean);
@@ -743,24 +913,23 @@
       .map(function(i) { return i.value.trim(); }).filter(Boolean);
     var sizes = Array.from(document.querySelectorAll('#pf-sizes-list .list-row')).map(function(row) {
       var inputs = row.querySelectorAll('input');
-      return { size: inputs[0].value.trim(), price: parseFloat(inputs[1].value) || price };
+      var sizePrice = parseFloat(inputs[1] ? inputs[1].value : '');
+      return { size: inputs[0] ? inputs[0].value.trim() : '', price: !isNaN(sizePrice) ? sizePrice : price };
     }).filter(function(s) { return s.size; });
     var colors = Array.from(document.querySelectorAll('#pf-colors-list .list-row input'))
       .map(function(i) { return i.value.trim(); }).filter(Boolean);
 
     var product = {
-      id: id,
-      name: name,
+      id: id, name: name,
       category: document.getElementById('pf-category').value,
       price: price,
       description: document.getElementById('pf-description').value.trim(),
       badge: document.getElementById('pf-badge').value,
       image: document.getElementById('pf-image').value.trim(),
-      images: images,
-      size_labels: sizeLabels,
-      sizes: sizes,
-      colors: colors,
-      sort_order: 0
+      images: images, size_labels: sizeLabels, sizes: sizes, colors: colors,
+      parcel_size: document.getElementById('pf-parcel-size').value,
+      bubble_selector: document.getElementById('pf-bubble-selector').checked,
+      sort_order: parseInt(document.getElementById('pf-sort-order').value) || 0, active: 1
     };
 
     try {
@@ -770,14 +939,23 @@
         body: JSON.stringify(product)
       });
       if (res.ok) {
-        alertEl.innerHTML = '<div class="alert alert-success">Product saved successfully!</div>';
+        showSaveMsg('<div class="alert alert-success">Saved! Loading updated list...</div>');
+        // Update local cache immediately so reopening edit shows correct values
+        var existing = allProducts.findIndex(function(x) { return x.id === id; });
+        if (existing >= 0) allProducts[existing] = Object.assign(allProducts[existing], product);
+        else allProducts.push(product);
+        renderProductsTable();
+        await new Promise(function(r) { setTimeout(r, 3000); });
         await loadProducts();
-        setTimeout(closeProductForm, 900);
+        closeProductForm();
+        var tbody = document.getElementById('products-tbody');
+        if (tbody && tbody.lastElementChild) tbody.lastElementChild.scrollIntoView();
       } else {
-        alertEl.innerHTML = '<div class="alert alert-error">Failed to save product.</div>';
+        var errText = await res.text();
+        showSaveMsg('<div class="alert alert-error">Failed ' + res.status + ': ' + errText + '</div>');
       }
     } catch (e) {
-      alertEl.innerHTML = '<div class="alert alert-error">Network error. Please try again.</div>';
+      showSaveMsg('<div class="alert alert-error">Network error: ' + e.message + '</div>');
     }
   }
 
@@ -788,7 +966,7 @@
     listEl.innerHTML = '<p style="color:#888;font-size:14px;">Loading...</p>';
     try {
       var results = await Promise.all([
-        fetch(WORKER_URL + '/get-all-stock').then(function(r) { return r.json(); }),
+        fetch(WORKER_URL + '/get-all-stock', { headers: { 'X-Admin-Key': adminKey } }).then(function(r) { return r.json(); }),
         fetch(WORKER_URL + '/get-products').then(function(r) { return r.json(); })
       ]);
       allStock = results[0];
@@ -801,32 +979,30 @@
 
   function renderStockList() {
     var listEl = document.getElementById('stock-list');
-    var pids = Object.keys(allStock);
-    if (!pids.length) {
-      listEl.innerHTML = '<p style="color:#888;font-size:14px;">No stock data found.</p>';
+    if (!allProducts.length) {
+      listEl.innerHTML = '<p style="color:#888;font-size:14px;">No products found.</p>';
       return;
     }
 
     var html = '';
-    pids.forEach(function(pid) {
-      var pStock = allStock[pid];
-      var product = allProducts.find(function(p) { return p.id == pid; });
-      var name = product ? product.name : 'Product #' + pid;
+    allProducts.forEach(function(product) {
+      var pid = product.id;
+      var pStock = allStock[pid] || {};
+      var name = product.name;
 
       html += '<div class="card">';
-      html += '<div class="stock-product-name">' + name +
-        ' <span style="color:#aaa;font-size:12px;font-weight:400;">ID: ' + pid + '</span></div>';
+      html += '<div class="stock-product-name" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleStockCard(this)">' +
+        '<span>' + name + '</span>' +
+        '<span style="font-size:18px;color:#aaa;user-select:none;">&#9660;</span>' +
+        '</div>';
+      html += '<div class="stock-card-body overview-group-body collapsed">';
 
-      if (pStock.__simple__ !== undefined) {
-        var q = pStock.__simple__;
-        html += '<table class="stock-table"><thead><tr><th>Total Stock</th></tr></thead><tbody>';
-        html += '<tr><td>' + qtyCell(q, pid, '__simple__', '__none__') + '</td></tr>';
-        html += '</tbody></table>';
-      } else {
-        var sizes = Object.keys(pStock);
-        var colorSet = {};
-        sizes.forEach(function(s) { Object.keys(pStock[s]).forEach(function(c) { colorSet[c] = 1; }); });
-        var colors = Object.keys(colorSet);
+      var hasSizes = product.sizes && product.sizes.length;
+      var hasColors = product.colors && product.colors.length;
+
+      if (hasSizes && hasColors) {
+        var sizes = product.sizes.map(function(s) { return s.size; });
+        var colors = product.colors;
 
         html += '<div style="overflow-x:auto;"><table class="stock-table"><thead><tr><th>Size</th>';
         colors.forEach(function(c) { html += '<th>' + c + '</th>'; });
@@ -835,24 +1011,59 @@
         sizes.forEach(function(size) {
           html += '<tr><td style="font-weight:600;white-space:nowrap;">' + size + '</td>';
           colors.forEach(function(color) {
-            if (pStock[size] && pStock[size][color] !== undefined) {
-              html += '<td>' + qtyCell(pStock[size][color], pid, size, color) + '</td>';
-            } else {
-              html += '<td style="color:#ccc;">—</td>';
-            }
+            var q = (pStock[size] && pStock[size][color] !== undefined) ? pStock[size][color] : 0;
+            html += '<td>' + qtyCell(q, pid, size, color) + '</td>';
           });
           html += '</tr>';
         });
         html += '</tbody></table></div>';
+      } else if (pStock.__simple__ !== undefined) {
+        html += '<table class="stock-table"><thead><tr><th>Total Stock</th></tr></thead><tbody>';
+        html += '<tr><td>' + qtyCell(pStock.__simple__, pid, '__simple__', '__none__') + '</td></tr>';
+        html += '</tbody></table>';
+      } else {
+        html += '<table class="stock-table"><thead><tr><th>Total Stock</th></tr></thead><tbody>';
+        html += '<tr><td>' + qtyCell(0, pid, '__simple__', '__none__') + '</td></tr>';
+        html += '</tbody></table>';
       }
-      html += '</div>';
+
+      html += '</div>'; // stock-card-body
+      html += '</div>'; // card
     });
 
     listEl.innerHTML = html;
   }
 
+  function collapseAll(containerId) {
+    document.querySelectorAll('#' + containerId + ' .overview-group-body').forEach(function(body) {
+      body.classList.add('collapsed');
+      body.previousElementSibling.querySelector('span:last-child').innerHTML = '&#9660;';
+    });
+  }
+
+  function expandAll(containerId) {
+    document.querySelectorAll('#' + containerId + ' .overview-group-body').forEach(function(body) {
+      body.classList.remove('collapsed');
+      body.previousElementSibling.querySelector('span:last-child').innerHTML = '&#9650;';
+    });
+  }
+
+  function toggleOverviewGroup(header) {
+    var body = header.nextElementSibling;
+    var arrow = header.querySelector('span:last-child');
+    body.classList.toggle('collapsed');
+    arrow.innerHTML = body.classList.contains('collapsed') ? '&#9660;' : '&#9650;';
+  }
+
+  function toggleStockCard(header) {
+    var body = header.nextElementSibling;
+    var arrow = header.querySelector('span:last-child');
+    body.classList.toggle('collapsed');
+    arrow.innerHTML = body.classList.contains('collapsed') ? '&#9660;' : '&#9650;';
+  }
+
   function qtyCell(qty, pid, stockKey, color) {
-    var cls = qty === 0 ? 'qty-0' : qty <= 3 ? 'qty-low' : 'qty-ok';
+    var cls = qty === 0 ? 'qty-0' : qty <= 5 ? 'qty-low' : 'qty-ok';
     var skSafe = stockKey.replace(/'/g, '&#39;');
     var cSafe  = color.replace(/'/g, '&#39;');
     return '<span class="qty-cell ' + cls + '" ' +
@@ -871,6 +1082,7 @@
     input.className = 'qty-input';
     input.value = currentQty;
     input.min = 0;
+    input.step = 1;
     el.replaceWith(input);
     input.focus();
     input.select();
@@ -879,11 +1091,15 @@
       var newQty = parseInt(input.value);
       if (isNaN(newQty) || newQty < 0) { input.replaceWith(el); return; }
       try {
-        await fetch(WORKER_URL + '/set-stock', {
+        var res = await fetch(WORKER_URL + '/set-stock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
           body: JSON.stringify({ productId: parseInt(pid), stockKey: stockKey, color: color, qty: newQty })
         });
+        if (!res.ok) {
+          input.replaceWith(el);
+          return;
+        }
         if (!allStock[pid]) allStock[pid] = {};
         if (stockKey === '__simple__') {
           allStock[pid].__simple__ = newQty;
@@ -893,10 +1109,11 @@
         }
         el.setAttribute('data-qty', newQty);
         el.textContent = newQty;
-        var cls = newQty === 0 ? 'qty-0' : newQty <= 3 ? 'qty-low' : 'qty-ok';
+        var cls = newQty === 0 ? 'qty-0' : newQty <= 5 ? 'qty-low' : 'qty-ok';
         el.className = 'qty-cell ' + cls;
         input.replaceWith(el);
       } catch (e) {
+        alert('Network error saving stock. Please try again.');
         input.replaceWith(el);
       }
     }
@@ -906,6 +1123,43 @@
       if (e.key === 'Enter') input.blur();
       if (e.key === 'Escape') input.replaceWith(el);
     });
+  }
+
+  // ── Seed stock ───────────────────────────────────────────────
+
+  async function seedStock() {
+    if (!confirm('This will overwrite all stock values in D1 with the data from products-data.js. Continue?')) return;
+    var alertEl = document.getElementById('seed-alert');
+    alertEl.innerHTML = '<div class="alert">Running... this may take a minute.</div>';
+
+    var entries = [];
+    products.forEach(function(p) {
+      if (!p.colors || !p.sizes) return;
+      p.sizes.forEach(function(s) {
+        p.colors.forEach(function(c) {
+          var qty = (p.stock && p.stock[s.size] && p.stock[s.size][c] !== undefined) ? p.stock[s.size][c] : 0;
+          entries.push({ productId: p.id, stockKey: s.size, color: c, qty: qty });
+        });
+      });
+    });
+
+    var done = 0, failed = 0;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      try {
+        var res = await fetch(WORKER_URL + '/set-stock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+          body: JSON.stringify(e)
+        });
+        if (res.ok) done++; else failed++;
+      } catch (err) { failed++; }
+      alertEl.innerHTML = '<div class="alert">Running... ' + (i+1) + ' of ' + entries.length + ' (' + Math.round((i+1)/entries.length*100) + '%)</div>';
+      await new Promise(function(r) { setTimeout(r, 30); });
+    }
+
+    alertEl.innerHTML = '<div class="alert alert-success">Done. ' + done + ' entries written, ' + failed + ' failed.</div>';
+    loadOverview();
   }
 
   // ── Settings ──────────────────────────────────────────────────
