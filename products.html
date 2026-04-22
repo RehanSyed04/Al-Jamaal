@@ -73,10 +73,20 @@
         <button class="filter-btn" data-filter="Women">Women</button>
         <button class="filter-btn" data-filter="Kids">Kids</button>
         <button class="filter-btn" data-filter="Home & Gifts">Home & Gifts</button>
+        <button class="filter-btn" data-filter="Perfumes">Perfumes</button>
+      </div>
+
+      <!-- Search Bar -->
+      <div style="text-align:center;margin:24px 0 32px;">
+        <input type="search" id="product-search" placeholder="Search products..." autocomplete="off"
+          style="width:100%;max-width:420px;padding:10px 18px;border:1px solid #ddd;border-radius:6px;font-size:15px;font-family:inherit;outline:none;box-sizing:border-box;">
       </div>
 
       <!-- Product Grid — populated by script.js -->
       <div class="products-grid" id="products-grid"></div>
+
+      <!-- No results message -->
+      <p id="products-no-results" style="display:none;text-align:center;color:#888;padding:40px 0;font-size:16px;">No products found matching your search.</p>
 
     </div>
   </section>
@@ -110,6 +120,7 @@
             <li><a href="products.html?category=Women">Women</a></li>
             <li><a href="products.html?category=Kids">Kids</a></li>
             <li><a href="products.html?category=Home+%26+Gifts">Home &amp; Gifts</a></li>
+            <li><a href="products.html?category=Perfumes">Perfumes</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -138,21 +149,7 @@
         var data = await res.json();
         if (!data || !data.length) return;
         products.splice(0, products.length, ...data);
-        var urlParams = new URLSearchParams(window.location.search);
-        var category = urlParams.get('category');
-        var toShow = category && category !== 'All'
-          ? products.filter(function(p) { return p.category === category; })
-          : products;
-        renderProductGrid('products-grid', toShow);
-        initCardSliderTouch(document.getElementById('products-grid'));
-        initCategoryFilter();
-        if (category) {
-          var btn = document.querySelector('.filter-btn[data-filter="' + category + '"]');
-          if (btn) {
-            document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-          }
-        }
+        applyProductFilters();
       } catch(e) {}
     })();
   </script>

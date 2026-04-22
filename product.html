@@ -117,6 +117,7 @@
             <li><a href="products.html?category=Women">Women</a></li>
             <li><a href="products.html?category=Kids">Kids</a></li>
             <li><a href="products.html?category=Home+%26+Gifts">Home &amp; Gifts</a></li>
+            <li><a href="products.html?category=Perfumes">Perfumes</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -145,20 +146,17 @@
     let product = null;
 
     (async function() {
-      product = products.find(p => p.id === productId);
+      try {
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products',
+          { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          var data = await res.json();
+          products.splice(0, products.length, ...data);
+        }
+      } catch(e) {}
 
-      if (!product) {
-        try {
-          var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products',
-            { signal: AbortSignal.timeout(5000) });
-          if (res.ok) {
-            var data = await res.json();
-            products.splice(0, products.length, ...data);
-            product = products.find(p => p.id === productId);
-            if (product && product.size_labels && !product.sizeLabels) product.sizeLabels = product.size_labels;
-          }
-        } catch(e) {}
-      }
+      product = products.find(p => p.id === productId);
+      if (product && product.size_labels && !product.sizeLabels) product.sizeLabels = product.size_labels;
 
       if (!product) {
         window.location.href = 'products.html';
@@ -204,6 +202,8 @@
       // Custom order note — shown on all products
       const customOrderNote = product.id === 1
         ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Need a size larger than 2X-Large? We\'d love to accommodate you \u2014 <a href="contact.html" style="color:#8B7355;font-weight:600;">contact us</a> for a custom order.</div>'
+        : product.id === 5
+        ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">We also offer full length Burqas — with or without sleeves — available to order. Reach out via our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll arrange one specially for you.</div>'
         : '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Interested in a custom order? Use our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll be happy to assist.</div>';
 
       // Color selector — dynamic from product.colors, button-based so unavailable colours can be crossed out
@@ -221,7 +221,7 @@
 
       // Build size selector HTML separately to avoid nested template literal issues
       let sizeHTML = '';
-      if (product.sizes) {
+      if (product.sizes && product.sizes.length > 0) {
         if (dualSelectorIds.includes(product.id) || product.bubble_selector) {
           sizeHTML = buildDualSizeSelector(product.sizes, product.sizeLabels);
         } else {
@@ -230,7 +230,7 @@
         }
       }
 
-      const priceText = product.sizes
+      const priceText = (product.sizes && product.sizes.length > 0)
         ? 'From R ' + Math.min(...product.sizes.map(s => s.price)).toFixed(2)
         : product.price > 0 ? 'R ' + product.price.toFixed(2) : 'Price on request';
 
@@ -246,11 +246,11 @@
           <p class="product-detail-price" id="product-detail-price">${priceText}</p>
           <p class="product-detail-desc">${product.description}</p>
 
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+          <div id="size-color-selector" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
             ${sizeHTML}
             ${colorHTML}
           </div>
-          ${colorNote}
+          <div id="color-note-container">${colorNote}</div>
           <div id="stock-status" style="margin:-8px 0 12px;"></div>
 
           <div class="product-detail-qty">
@@ -280,6 +280,18 @@
             <p><strong>Category:</strong> ${product.category}</p>
             <p><strong>Availability:</strong> ${product.badge === 'Sold Out' ? 'Sold Out' : product.badge === 'Limited' ? 'Limited Stock' : 'In Stock'}</p>
           </div>
+          ${product.scent_profile ? `
+          <div style="margin-top:28px;border-top:1px solid #E8E2D7;padding-top:24px;">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">Scent Profile</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              ${product.scent_profile.notes ? `<tr><td style="padding:7px 0;color:#888;width:38%;border-bottom:1px solid #f0ece6;">Notes</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">${product.scent_profile.notes}</td></tr>` : ''}
+              ${product.scent_profile.profile ? `<tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Scent Profile</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">${product.scent_profile.profile}</td></tr>` : ''}
+              ${product.scent_profile.smells_like ? `<tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Smells Like</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">${product.scent_profile.smells_like}</td></tr>` : ''}
+              ${product.scent_profile.feels_like ? `<tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Feels Like</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">${product.scent_profile.feels_like}</td></tr>` : ''}
+              ${product.scent_profile.best_for ? `<tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Best For</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">${product.scent_profile.best_for}</td></tr>` : ''}
+              ${product.scent_profile.reminds_of ? `<tr><td style="padding:7px 0;color:#888;">Reminds Me Of</td><td style="padding:7px 0;">${product.scent_profile.reminds_of}</td></tr>` : ''}
+            </table>
+          </div>` : ''}
         </div>
       `;
 
@@ -299,7 +311,6 @@
       renderProductGrid('related-products', related);
       updateStockUI();
       fetchLiveStock();
-      fetchLiveProduct();
       }
     })();
 
@@ -331,6 +342,36 @@
             priceEl.textContent = 'R ' + product.price.toFixed(2);
           }
         }
+
+        // Re-render size and color selectors with live data
+        var selectorEl = document.getElementById('size-color-selector');
+        if (selectorEl) {
+          var liveSizeHTML = '';
+          if (product.sizes && product.sizes.length > 0) {
+            if (dualSelectorIds.includes(product.id) || product.bubble_selector) {
+              liveSizeHTML = buildDualSizeSelector(product.sizes, product.sizeLabels);
+            } else {
+              var opts = product.sizes.map(function(s) {
+                return '<option value="' + s.size + '" data-price="' + s.price + '">' + s.size + ' — R ' + s.price.toFixed(2) + '</option>';
+              }).join('');
+              liveSizeHTML = '<div style="flex:1;min-width:140px;"><label style="display:block;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Size</label><select id="detail-size" onchange="updateSizePrice()" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;cursor:pointer;"><option value="">Select a size</option>' + opts + '</select></div>';
+            }
+          }
+          var liveColorHTML = (product.colors && product.colors.length > 0)
+            ? '<div style="flex:0 0 100%;width:100%;"><div style="padding:16px;border:1px solid #E8E2D7;background:#FAF8F5;"><div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;color:#555;">SELECT COLOUR: <span id="selected-color-label" style="font-weight:600;letter-spacing:0;text-transform:none;color:#8B7355;"></span></div><div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+              product.colors.map(function(c) { return '<button type="button" class="size-btn" data-color="' + c + '" onclick="selectColor(\'' + c + '\')">' + c + '</button>'; }).join('') +
+              '</div></div></div>'
+            : '';
+          selectorEl.innerHTML = liveSizeHTML + liveColorHTML;
+          var colorNoteEl = document.getElementById('color-note-container');
+          if (colorNoteEl) {
+            colorNoteEl.innerHTML = (product.colors && product.colors.length > 0)
+              ? '<p style="font-size:12px;color:#999;margin:-4px 0 20px;line-height:1.6;">Our photos may feature colours from past seasons. Only the colours listed above are currently available.</p>'
+              : '';
+          }
+          updateStockUI();
+        }
+
         var actionsEl = document.querySelector('.product-detail-actions');
         if (actionsEl && product.badge === 'Sold Out') {
           actionsEl.innerHTML = '<button class="btn btn-primary" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled>Sold Out</button><a href="cart.html" class="btn btn-dark" style="flex:1;text-align:center;">View Cart</a>';
@@ -382,7 +423,7 @@
       window._selectedChest = null;
 
       // Single-label mode: one row of buttons, no second dropdown
-      if (!labels || labels.length === 1) {
+      if (!labels || labels.length <= 1) {
         window._singleSizes = sizes;
         var btns = sizes.map(function(s, i) {
           return '<button type="button" class="size-btn" data-idx="' + i + '" onclick="selectSingleSize(' + i + ')">' + s.size + '</button>';

@@ -434,6 +434,7 @@
             <option value="Women">Women</option>
             <option value="Kids">Kids</option>
             <option value="Home & Gifts">Home &amp; Gifts</option>
+            <option value="Perfumes">Perfumes</option>
           </select>
         </div>
       </div>
@@ -871,8 +872,10 @@
     if (id === null) {
       document.getElementById('overlay-title').textContent = 'Add Product';
       var nextId = allProducts.length ? Math.max.apply(null, allProducts.map(function(x) { return x.id; })) + 1 : 1;
+      var nextSortOrder = allProducts.length ? Math.max.apply(null, allProducts.map(function(x) { return x.sort_order || 0; })) + 1 : 0;
       document.getElementById('pf-id').value = '';
       document.getElementById('pf-id-visible').value = nextId;
+      document.getElementById('pf-sort-order').value = nextSortOrder;
       document.getElementById('pf-id-row').style.display = 'block';
       currentProductHidden = 0;
       document.getElementById('pf-visibility-btn').style.display = 'none';
