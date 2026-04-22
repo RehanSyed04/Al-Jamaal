@@ -172,6 +172,18 @@
 
   <script src="js/products-data.js"></script>
   <script src="js/script.js"></script>
+  <script>
+    (async function() {
+      try {
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products');
+        if (!res.ok) return;
+        var data = await res.json();
+        if (!data || !data.length) return;
+        products.splice(0, products.length, ...data);
+        renderCart();
+      } catch(e) {}
+    })();
+  </script>
 
 </body>
 </html>

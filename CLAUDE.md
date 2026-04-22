@@ -13,10 +13,15 @@ Built by UMass Boston IT485 Group 8 as a capstone project:
 ---
 
 ## Tech Stack
-- **Pure static HTML/CSS/JS — no frameworks, no build tools, no backend**
-- All product data lives in `js/products-data.js` (single source of truth)
+- **Frontend: plain HTML/CSS/JS — no frameworks, no build tools**
+- **Backend: Cloudflare Worker + D1 database + R2 storage (serverless)**
+- Product data lives in **Cloudflare D1** (source of truth) — synced to browser via `/get-products` on page load. `js/products-data.js` is a fallback only.
+- Stock tracked per size+colour in D1 `stock` table, managed via admin dashboard
 - Cart state stored in `localStorage` under key `aljamaal_cart`, managed via `CartManager` object in `script.js`
+- Cart auto-expires after **30 minutes of inactivity** via `aljamaal_cart_expiry` localStorage key
 - Order data passed from checkout → thank you page via `localStorage` key `aljamaal_last_order`
+- **Cloudflare Worker** (`aljamaal-shipping`) proxies all D1 reads/writes and external APIs (TCG, Resend)
+- **Admin dashboard** at `dashboard.html` — password protected, manages products/stock/settings
 
 ---
 
@@ -52,6 +57,22 @@ Built by UMass Boston IT485 Group 8 as a capstone project:
 - Triggered from `thankyou.html` via Worker `/send-confirmation` endpoint
 - Sends two emails per order: customer confirmation + client "New Order" notification
 - DNS records managed by Anthony at disent (anthony.malizio@disent.com)
+
+### Cloudflare D1 (Database) — LIVE
+- Database name: `aljamaal-stock` | Bound to Worker as `DB`
+- Tables: `products` (all product data), `stock` (per size+colour qty), `settings` (maintenance mode)
+- All product/stock changes go through admin dashboard → Worker → D1
+- **Never edit products-data.js for new products** — use the admin dashboard
+
+### Cloudflare R2 (Image Storage) — IN PROGRESS
+- Bucket name: `aljamaal-images` | Bound to Worker as `IMAGES`
+- Public Development URL: TBD (being set up Apr 2026)
+- Purpose: Admin-uploaded product images stored in R2, served via public URL
+
+### Admin Dashboard
+- URL: `dashboard.html` | Password: `Aljamaal@786` (ADMIN_SECRET in Worker env)
+- Tabs: Overview (low stock alerts), Products (add/edit/reorder), Stock (inline qty editing), Settings (maintenance mode)
+- To add a new product: Products tab → fill form → Save. Then Stock tab → set quantities.
 
 ### EmailJS (Contact Form)
 - Account: aljamaalcustomersupport@gmail.com (client's account)
@@ -96,8 +117,12 @@ Stylesheet links use `?v=N` query param (e.g. `?v=13`). Increment when making br
 | 34 | Sizes missing from individual product pages |
 | 35 | ~~Collection address + TCG API key are placeholders~~ — resolved Apr 2026 |
 | 37 | ~~PayFast return URL points to disent.com~~ — resolved Apr 2026 |
-| 39 | Non-SA phone numbers clear the phone field — TCG gets empty mobile_number |
+| 39 | Non-SA phone numbers clear the phone field — won't fix (SA-only store) |
 | 40 | Mobile remove button on cart doesn't show |
+| 41 | ~~Cart qty + button used static products-data.js stock~~ — fixed Apr 2026 (D1 fetch on cart load) |
+| 42 | ~~Checkout allowed overselling~~ — fixed Apr 2026 (D1 stock check before PayFast submit) |
+| 43 | ~~TCG phone numbers sent as +27XXXXXXXXX~~ — fixed Apr 2026 (normPhone in Worker) |
+| 44 | ~~Worker /get-products didn't include stock data~~ — fixed Apr 2026 (parallel stock JOIN) |
 
 ---
 

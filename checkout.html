@@ -86,7 +86,7 @@
             id="checkout-form"
             action="https://www.payfast.co.za/eng/process"
             method="POST"
-            onsubmit="return preparePayFastForm()"
+            onsubmit="handleCheckout(event)"
           >
 
             <!-- PayFast hidden fields -->
@@ -510,6 +510,65 @@
         val = '+' + val.slice(1).replace(/\D/g, '');
       }
       input.value = val;
+    }
+
+    async function checkStockAvailable() {
+      try {
+        var res = await fetch(WORKER_URL + '/get-products?t=' + Date.now());
+        if (!res.ok) return { ok: true };
+        var liveProducts = await res.json();
+        var cart = CartManager.getCart();
+        var outOfStock = [];
+        cart.forEach(function(item) {
+          var idStr = String(item.id);
+          var dashIdx = idStr.indexOf('-');
+          if (dashIdx === -1) return;
+          var productId = parseInt(idStr.substring(0, dashIdx));
+          var product = liveProducts.find(function(p) { return p.id === productId; });
+          if (!product || !product.stock || !product.colors) return;
+          var rest = idStr.substring(dashIdx + 1);
+          product.colors.forEach(function(color) {
+            if (rest === color || rest.endsWith('-' + color)) {
+              var stockKey = rest === color ? null : rest.substring(0, rest.length - color.length - 1);
+              if (!stockKey) return;
+              var available = (product.stock[stockKey] && product.stock[stockKey][color]) || 0;
+              if (item.qty > available) {
+                outOfStock.push({ name: item.name, requested: item.qty, available: available });
+              }
+            }
+          });
+        });
+        return outOfStock.length > 0 ? { ok: false, items: outOfStock } : { ok: true };
+      } catch(e) {
+        return { ok: true }; // fail open — don't block checkout if D1 is unreachable
+      }
+    }
+
+    async function handleCheckout(event) {
+      event.preventDefault();
+      if (!preparePayFastForm()) return;
+
+      var btn = document.querySelector('[form="checkout-form"]');
+      var origText = btn.textContent;
+      btn.textContent = 'Checking availability...';
+      btn.disabled = true;
+
+      var stockCheck = await checkStockAvailable();
+
+      if (!stockCheck.ok) {
+        btn.textContent = origText;
+        btn.disabled = false;
+        var msgs = stockCheck.items.map(function(i) {
+          return i.available === 0
+            ? '"' + i.name + '" is now sold out'
+            : '"' + i.name + '" — only ' + i.available + ' left (you have ' + i.requested + ' in cart)';
+        }).join('\n');
+        alert('Some items are no longer available:\n\n' + msgs + '\n\nPlease update your cart and try again.');
+        window.location.href = 'cart.html';
+        return;
+      }
+
+      document.getElementById('checkout-form').submit();
     }
 
     // Init grand total on page load

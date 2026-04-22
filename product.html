@@ -16,7 +16,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Product — Al Jamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css?v=13">
+  <link rel="stylesheet" href="css/styles.css?v=14">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>
@@ -737,7 +737,8 @@
         // Size selection — only for products that have sizes
         if (product.sizes && product.sizes.length > 0) {
           const isDual = dualSelectorIds.includes(product.id) || product.bubble_selector;
-          if (isDual) {
+          if (isDual && window._burnooseSizeData) {
+            // Length + chest dual selector (e.g. Original Burnoose)
             const len = window._selectedLength;
             if (!len) { alert('Please select a size.'); return; }
             const chest = window._selectedChest;

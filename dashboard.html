@@ -475,14 +475,15 @@
 
     <div class="form-section">
       <div class="form-section-title">Images</div>
-      <div class="form-group" style="margin-bottom:16px;">
-        <label class="form-label">Primary Image Path</label>
-        <input type="text" class="form-input" id="pf-image" placeholder="images/ProductM.jpg" oninput="updatePreview()">
-        <img id="pf-image-preview" class="img-preview" style="display:none;" alt="Preview">
+      <input type="hidden" id="pf-image">
+      <div style="margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('img-upload-input').click()">+ Upload Images</button>
+        <input type="file" id="img-upload-input" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this)">
+        <span id="img-upload-status" style="font-size:13px;color:#888;"></span>
       </div>
-      <div class="form-label" style="margin-bottom:8px;">Additional Images</div>
-      <div id="pf-images-list"></div>
-      <button class="add-row-btn" onclick="addImageRow()">+ Add Image</button>
+      <div id="pf-image-gallery" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;"></div>
+      <p style="font-size:12px;color:#aaa;margin-top:10px;">First image is the primary image shown on product cards. Use arrows to reorder.</p>
+      <p style="font-size:12px;color:#aaa;margin-top:4px;">Accepted: JPG, PNG, WEBP, GIF &nbsp;·&nbsp; Not accepted: HEIC, BMP, TIFF</p>
     </div>
 
     <div class="form-section">
@@ -511,9 +512,10 @@
     </div>
 
     <div id="overlay-alert-bottom" style="margin-bottom:12px;"></div>
-    <div style="display:flex;gap:12px;margin-top:8px;">
+    <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center;">
       <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
       <button class="btn btn-outline" onclick="closeProductForm()">Cancel</button>
+      <button class="btn btn-outline" id="pf-visibility-btn" onclick="toggleProductVisibility()" style="display:none;margin-left:auto;"></button>
     </div>
   </div>
 </div>
@@ -524,6 +526,71 @@
   var adminKey = '';
   var allProducts = [];
   var allStock = {};
+  var galleryImages = []; // { key, url } — tracks images in the product form
+  var currentProductHidden = 0;
+
+  function renderImageGallery() {
+    var el = document.getElementById('pf-image-gallery');
+    if (!galleryImages.length) {
+      el.innerHTML = '<p style="color:#aaa;font-size:13px;">No images yet. Upload some above.</p>';
+      document.getElementById('pf-image').value = '';
+      return;
+    }
+    document.getElementById('pf-image').value = galleryImages[0].url;
+    el.innerHTML = galleryImages.map(function(img, i) {
+      return '<div style="position:relative;width:100px;text-align:center;">' +
+        (i === 0 ? '<div style="font-size:10px;color:#C9A96E;font-weight:700;margin-bottom:4px;">PRIMARY</div>'
+                 : '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">#' + (i + 1) + '</div>') +
+        '<img src="' + img.url + '" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:' + (i === 0 ? '2px solid #C9A96E' : '1px solid #ddd') + ';">' +
+        '<div style="display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap;">' +
+          (i > 0 ? '<button type="button" onclick="moveGalleryImage(' + i + ',-1)" style="padding:2px 6px;font-size:11px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;">&#9664;</button>' : '') +
+          (i < galleryImages.length - 1 ? '<button type="button" onclick="moveGalleryImage(' + i + ',1)" style="padding:2px 6px;font-size:11px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;">&#9654;</button>' : '') +
+          '<a href="' + img.url + '" download target="_blank" style="padding:2px 6px;font-size:11px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;text-decoration:none;color:inherit;" title="Download">&#8595;</a>' +
+          '<button type="button" onclick="removeGalleryImage(' + i + ')" style="padding:2px 6px;font-size:11px;border:1px solid #fcc;background:#fff5f5;border-radius:3px;cursor:pointer;color:#c0392b;" title="Remove">&#10005;</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function moveGalleryImage(index, dir) {
+    var newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= galleryImages.length) return;
+    var tmp = galleryImages[index];
+    galleryImages[index] = galleryImages[newIndex];
+    galleryImages[newIndex] = tmp;
+    renderImageGallery();
+  }
+
+  function removeGalleryImage(index) {
+    galleryImages.splice(index, 1);
+    renderImageGallery();
+  }
+
+  async function handleImageUpload(input) {
+    var files = Array.from(input.files);
+    if (!files.length) return;
+    var statusEl = document.getElementById('img-upload-status');
+    statusEl.textContent = 'Uploading ' + files.length + ' image(s)...';
+    var uploaded = 0;
+    for (var i = 0; i < files.length; i++) {
+      var formData = new FormData();
+      formData.append('file', files[i]);
+      try {
+        var res = await fetch(WORKER_URL + '/upload-image', {
+          method: 'POST',
+          headers: { 'X-Admin-Key': adminKey },
+          body: formData
+        });
+        var data = await res.json();
+        if (data.ok) { galleryImages.push({ key: data.key, url: data.url }); uploaded++; }
+        else { statusEl.textContent = 'Error: ' + (data.error || 'Upload failed'); }
+      } catch(e) { statusEl.textContent = 'Network error during upload'; }
+    }
+    input.value = '';
+    renderImageGallery();
+    statusEl.textContent = uploaded + ' image(s) uploaded.';
+    setTimeout(function() { statusEl.textContent = ''; }, 3000);
+  }
 
   // ── Auth ──────────────────────────────────────────────────────
 
@@ -690,7 +757,7 @@
 
   async function loadProducts() {
     try {
-      var res = await fetch(WORKER_URL + '/get-products?t=' + Date.now());
+      var res = await fetch(WORKER_URL + '/get-products?t=' + Date.now(), { headers: { 'X-Admin-Key': adminKey } });
       allProducts = await res.json();
       allProducts.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id; });
       renderProductsTable();
@@ -719,14 +786,17 @@
     }
     tbody.innerHTML = allProducts.map(function(p, i) {
       var safeName = p.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      return '<tr draggable="true" data-index="' + i + '" ' +
+      var isHidden = p.hidden ? true : false;
+      var rowStyle = isHidden ? ' style="opacity:0.45;"' : '';
+      var hiddenBadge = isHidden ? ' <span style="background:#e0e0e0;color:#888;padding:2px 7px;border-radius:3px;font-size:11px;vertical-align:middle;">Hidden</span>' : '';
+      return '<tr draggable="true" data-index="' + i + '"' + rowStyle + ' ' +
         'ondragstart="dragStart(event,' + i + ')" ' +
         'ondragover="dragOver(event)" ' +
         'ondragleave="dragLeave(event)" ' +
         'ondrop="dragDrop(event,' + i + ')">' +
         '<td style="cursor:grab;color:#bbb;font-size:20px;user-select:none;padding:14px 8px 14px 16px;" title="Drag to reorder">⠿</td>' +
         '<td style="color:#888;">' + p.id + '</td>' +
-        '<td><strong>' + p.name + '</strong></td>' +
+        '<td><strong>' + p.name + '</strong>' + hiddenBadge + '</td>' +
         '<td>' + p.category + '</td>' +
         '<td>' + effectivePrice(p) + '</td>' +
         '<td>' + (p.badge ? '<span style="background:#F7F5F1;padding:3px 8px;border-radius:3px;font-size:12px;">' + p.badge + '</span>' : '—') + '</td>' +
@@ -802,6 +872,8 @@
       document.getElementById('pf-id').value = '';
       document.getElementById('pf-id-visible').value = nextId;
       document.getElementById('pf-id-row').style.display = 'block';
+      currentProductHidden = 0;
+      document.getElementById('pf-visibility-btn').style.display = 'none';
     } else {
       var p = allProducts.find(function(x) { return x.id === id; });
       if (!p) return;
@@ -813,21 +885,69 @@
       document.getElementById('pf-price').value = p.price;
       document.getElementById('pf-badge').value = p.badge || '';
       document.getElementById('pf-description').value = p.description || '';
-      document.getElementById('pf-image').value = p.image || '';
       document.getElementById('pf-parcel-size').value = p.parcel_size || 'large';
       document.getElementById('pf-sort-order').value = p.sort_order || 0;
       document.getElementById('pf-bubble-selector').checked = !!p.bubble_selector;
-      updatePreview();
-      (p.images || []).forEach(function(img) { addImageRow(img); });
+      galleryImages = [];
+      if (p.images && p.images.length) {
+        p.images.forEach(function(url) { if (url) galleryImages.push({ key: '', url: url }); });
+      } else if (p.image) {
+        galleryImages.push({ key: '', url: p.image });
+      }
+      renderImageGallery();
       (p.size_labels || []).forEach(function(lbl) { addSizeLabelRow(lbl); });
       (p.sizes || []).forEach(function(s) { addSizeRow(s.size, s.price); });
       (p.colors || []).forEach(function(c) { addColorRow(c); });
+      currentProductHidden = p.hidden ? 1 : 0;
+      updateVisibilityBtn();
+      document.getElementById('pf-visibility-btn').style.display = 'inline-block';
     }
     document.getElementById('product-overlay').classList.add('active');
   }
 
   function closeProductForm() {
     document.getElementById('product-overlay').classList.remove('active');
+  }
+
+  function updateVisibilityBtn() {
+    var btn = document.getElementById('pf-visibility-btn');
+    if (currentProductHidden) {
+      btn.textContent = 'Show on Site';
+      btn.style.borderColor = '#4CAF50';
+      btn.style.color = '#4CAF50';
+    } else {
+      btn.textContent = 'Hide from Site';
+      btn.style.borderColor = '#999';
+      btn.style.color = '#999';
+    }
+  }
+
+  async function toggleProductVisibility() {
+    var id = parseInt(document.getElementById('pf-id').value);
+    if (!id) return;
+    var newHidden = currentProductHidden ? 0 : 1;
+    var btn = document.getElementById('pf-visibility-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      var res = await fetch(WORKER_URL + '/set-product-hidden', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+        body: JSON.stringify({ id: id, hidden: newHidden })
+      });
+      if (res.ok) {
+        currentProductHidden = newHidden;
+        var p = allProducts.find(function(x) { return x.id === id; });
+        if (p) p.hidden = newHidden;
+        renderProductsTable();
+      } else {
+        alert('Failed to update visibility.');
+      }
+    } catch (e) {
+      alert('Network error.');
+    }
+    btn.disabled = false;
+    updateVisibilityBtn();
   }
 
   function clearProductForm() {
@@ -840,25 +960,11 @@
     document.getElementById('pf-parcel-size').value = 'large';
     document.getElementById('pf-sort-order').value = 0;
     document.getElementById('pf-bubble-selector').checked = false;
-    document.getElementById('pf-image-preview').style.display = 'none';
-    ['pf-images-list','pf-size-labels-list','pf-sizes-list','pf-colors-list'].forEach(function(id) {
+    galleryImages = [];
+    renderImageGallery();
+    ['pf-size-labels-list','pf-sizes-list','pf-colors-list'].forEach(function(id) {
       document.getElementById(id).innerHTML = '';
     });
-  }
-
-  function updatePreview() {
-    var path = document.getElementById('pf-image').value.trim();
-    var preview = document.getElementById('pf-image-preview');
-    if (path) { preview.src = path; preview.style.display = 'block'; }
-    else { preview.style.display = 'none'; }
-  }
-
-  function addImageRow(val) {
-    var div = document.createElement('div');
-    div.className = 'list-row';
-    div.innerHTML = '<input type="text" placeholder="images/ProductS1.jpg" value="' + (val || '') + '">' +
-      '<button class="remove-row-btn" onclick="this.parentElement.remove()">&#x2715;</button>';
-    document.getElementById('pf-images-list').appendChild(div);
   }
 
   function addSizeLabelRow(val) {
@@ -907,8 +1013,7 @@
       return;
     }
 
-    var images = Array.from(document.querySelectorAll('#pf-images-list .list-row input'))
-      .map(function(i) { return i.value.trim(); }).filter(Boolean);
+    var images = galleryImages.map(function(img) { return img.url; });
     var sizeLabels = Array.from(document.querySelectorAll('#pf-size-labels-list .list-row input'))
       .map(function(i) { return i.value.trim(); }).filter(Boolean);
     var sizes = Array.from(document.querySelectorAll('#pf-sizes-list .list-row')).map(function(row) {
@@ -929,7 +1034,8 @@
       images: images, size_labels: sizeLabels, sizes: sizes, colors: colors,
       parcel_size: document.getElementById('pf-parcel-size').value,
       bubble_selector: document.getElementById('pf-bubble-selector').checked,
-      sort_order: parseInt(document.getElementById('pf-sort-order').value) || 0, active: 1
+      sort_order: parseInt(document.getElementById('pf-sort-order').value) || 0, active: 1,
+      hidden: currentProductHidden
     };
 
     try {

@@ -10,15 +10,22 @@
    ============================================================ */
 const CartManager = {
 
-  /** Get the current cart array from localStorage */
+  /** Get the current cart array from localStorage — clears if older than 30 min */
   getCart() {
+    const expiry = localStorage.getItem('aljamaal_cart_expiry');
+    if (expiry && Date.now() > parseInt(expiry)) {
+      localStorage.removeItem('aljamaal_cart');
+      localStorage.removeItem('aljamaal_cart_expiry');
+      return [];
+    }
     const data = localStorage.getItem('aljamaal_cart');
     return data ? JSON.parse(data) : [];
   },
 
-  /** Save the cart array to localStorage */
+  /** Save the cart array to localStorage and reset the 30-min expiry */
   saveCart(cart) {
     localStorage.setItem('aljamaal_cart', JSON.stringify(cart));
+    localStorage.setItem('aljamaal_cart_expiry', Date.now() + 30 * 60 * 1000);
   },
 
   /** Add a product to the cart (or increase its quantity if already there) */
