@@ -610,6 +610,7 @@
       if (res.ok) {
         adminKey = pw;
         sessionStorage.setItem('aljamaal_admin_key', pw);
+        localStorage.setItem('aljamaal_admin_key', pw);
         showDashboard();
       } else {
         document.getElementById('login-error').style.display = 'block';
@@ -621,6 +622,7 @@
 
   function doLogout() {
     sessionStorage.removeItem('aljamaal_admin_key');
+    localStorage.removeItem('aljamaal_admin_key');
     adminKey = '';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
