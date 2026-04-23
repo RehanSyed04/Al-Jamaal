@@ -157,13 +157,13 @@ function initMobileMenu() {
 }
 
 /* ============================================================
-   PRODUCT CARDS — render product cards from products-data.js
+   PRODUCT CARDS — render product cards from D1
    Called on index.html (featured) and products.html (full grid)
    ============================================================ */
 
 /**
  * Creates the HTML for a single product card.
- * @param {Object} product - A product object from products-data.js
+ * @param {Object} product - A product object from D1
  * @returns {string} HTML string
  */
 function createProductCardHTML(product) {
@@ -384,7 +384,7 @@ function renderCart() {
 function getCartItemStock(item) {
   // Cart item IDs are formatted as: "productId", "productId-sizeLabel", or "productId-sizeLabel-color"
   // Parse the product ID from the start, then find which color (if any) the ID ends with.
-  if (typeof products === 'undefined') return null;
+  if (!products.length) return null;
   const idStr = String(item.id);
   const dashIdx = idStr.indexOf('-');
   if (dashIdx === -1) return null; // no size/color variant, no stock to check

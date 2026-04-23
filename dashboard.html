@@ -394,12 +394,6 @@
       <div id="maint-alert" style="margin-top:20px;"></div>
     </div>
 
-    <div class="card" style="margin-top:24px;">
-      <div class="card-title" style="margin-bottom:8px;">Seed Stock from products-data.js</div>
-      <p style="font-size:13px;color:#666;margin-bottom:16px;">Writes every size × colour combination from products-data.js into D1. Items with stock get their quantity; items missing from the stock object are set to 0 (out of stock). Safe to run multiple times — existing values are overwritten.</p>
-      <button class="btn btn-primary" onclick="seedStock()">Run Stock Seed</button>
-      <div id="seed-alert" style="margin-top:16px;"></div>
-    </div>
   </div>
 
 </div>
@@ -521,7 +515,6 @@
   </div>
 </div>
 
-<script src="js/products-data.js?v=16"></script>
 <script>
   var WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
   var adminKey = '';
@@ -1238,40 +1231,6 @@
 
   // ── Seed stock ───────────────────────────────────────────────
 
-  async function seedStock() {
-    if (!confirm('This will overwrite all stock values in D1 with the data from products-data.js. Continue?')) return;
-    var alertEl = document.getElementById('seed-alert');
-    alertEl.innerHTML = '<div class="alert">Running... this may take a minute.</div>';
-
-    var entries = [];
-    products.forEach(function(p) {
-      if (!p.colors || !p.sizes) return;
-      p.sizes.forEach(function(s) {
-        p.colors.forEach(function(c) {
-          var qty = (p.stock && p.stock[s.size] && p.stock[s.size][c] !== undefined) ? p.stock[s.size][c] : 0;
-          entries.push({ productId: p.id, stockKey: s.size, color: c, qty: qty });
-        });
-      });
-    });
-
-    var done = 0, failed = 0;
-    for (var i = 0; i < entries.length; i++) {
-      var e = entries[i];
-      try {
-        var res = await fetch(WORKER_URL + '/set-stock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
-          body: JSON.stringify(e)
-        });
-        if (res.ok) done++; else failed++;
-      } catch (err) { failed++; }
-      alertEl.innerHTML = '<div class="alert">Running... ' + (i+1) + ' of ' + entries.length + ' (' + Math.round((i+1)/entries.length*100) + '%)</div>';
-      await new Promise(function(r) { setTimeout(r, 30); });
-    }
-
-    alertEl.innerHTML = '<div class="alert alert-success">Done. ' + done + ' entries written, ' + failed + ' failed.</div>';
-    loadOverview();
-  }
 
   // ── Settings ──────────────────────────────────────────────────
 
