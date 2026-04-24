@@ -399,7 +399,10 @@ function getCartItemStock(item) {
 
   if (!stockKey) return null;
   const sizeStock = product.stock[stockKey];
-  if (!sizeStock) return null;
+  if (sizeStock === undefined || sizeStock === null) return null;
+
+  // Worker returns a flat number for __simple__ products with no colour
+  if (typeof sizeStock === 'number') return sizeStock;
 
   if (color) return sizeStock[color] !== undefined ? sizeStock[color] : 0;
   // No colour variant — grab the single entry
