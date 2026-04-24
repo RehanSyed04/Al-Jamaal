@@ -136,4 +136,4 @@ Stylesheet links use `?v=N` query param (e.g. `?v=13`). Increment when making br
 - [x] Uncomment `bookShipment(order)` in thankyou.html (Apr 2026)
 - [ ] Remove Testing Item (id: 99) from top of js/products-data.js (when client is done testing)
 - [x] Replace placeholder email → aljamaalcustomersupport@gmail.com
-- [x] Replace placeholder WhatsApp → +27 79 753 0827
+- [x] Replace placeholder WhatsApp → +27 60 302 3555

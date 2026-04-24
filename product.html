@@ -124,7 +124,7 @@
           <h4>Contact</h4>
           <address>
             <a href="mailto:aljamaalcustomersupport@gmail.com" style="color:#888;">aljamaalcustomersupport@gmail.com</a><br><br>
-            <a href="https://wa.me/27797530827" style="color:#888;">WhatsApp: +27 79 753 0827</a><br><br>
+            <a href="https://wa.me/27603023555" style="color:#888;">WhatsApp: +27 60 302 3555</a><br><br>
             <a href="https://www.instagram.com/aljamaal_official/" target="_blank" style="color:#888;">Instagram: @aljamaal_official</a>
           </address>
         </div>
@@ -488,6 +488,10 @@
       document.querySelector('.size-btn[data-idx="' + idx + '"]').classList.add('active');
       document.getElementById('selected-length-label').textContent = s.size;
       document.getElementById('product-detail-price').textContent = 'R ' + s.price.toFixed(2);
+      window._selectedColor = null;
+      document.querySelectorAll('.size-btn[data-color]').forEach(function(b) { b.classList.remove('active'); });
+      var colorLbl = document.getElementById('selected-color-label');
+      if (colorLbl) colorLbl.textContent = '';
       updateStockUI();
     }
 
@@ -512,6 +516,10 @@
 
       window._selectedLength = len;
       window._selectedChest = null;
+      window._selectedColor = null;
+      document.querySelectorAll('.size-btn[data-color]').forEach(function(b) { b.classList.remove('active'); });
+      var colorLbl2 = document.getElementById('selected-color-label');
+      if (colorLbl2) colorLbl2.textContent = '';
       var chestLabelEl = document.getElementById('selected-chest-label');
       if (chestLabelEl) chestLabelEl.textContent = '';
 
