@@ -382,27 +382,29 @@ function renderCart() {
 }
 
 function getCartItemStock(item) {
-  // Cart item IDs are formatted as: "productId", "productId-sizeLabel", or "productId-sizeLabel-color"
-  // Parse the product ID from the start, then find which color (if any) the ID ends with.
   if (!products.length) return null;
-  const idStr = String(item.id);
-  const dashIdx = idStr.indexOf('-');
-  if (dashIdx === -1) return null; // no size/color variant, no stock to check
-  const productId = parseInt(idStr.substring(0, dashIdx));
+  const productId = item.productId || parseInt(String(item.id).split('-')[0]);
   const product = products.find(p => p.id === productId);
   if (!product || !product.stock) return null;
-  const rest = idStr.substring(dashIdx + 1); // e.g. "56 Medium-Black" or "56 Medium-Light Grey"
-  if (!product.colors) return null;
-  // Match the color by checking what the rest of the ID ends with
-  for (const color of product.colors) {
-    if (rest === color || rest.endsWith('-' + color)) {
-      const stockKey = rest === color ? null : rest.substring(0, rest.length - color.length - 1);
-      if (!stockKey) return null;
-      const sizeStock = product.stock[stockKey];
-      return (sizeStock && sizeStock[color]) || 0;
-    }
-  }
-  return null;
+
+  // Flat numeric stock
+  if (typeof product.stock === 'number') return product.stock;
+
+  // Use the stockKey and color stored on the cart item at add-to-cart time
+  let stockKey = item.stockKey || null;
+  const color = item.color || null;
+
+  // Fallback for __simple__ products (no size selector, stock keyed under __simple__)
+  if (!stockKey && product.stock.__simple__ !== undefined) stockKey = '__simple__';
+
+  if (!stockKey) return null;
+  const sizeStock = product.stock[stockKey];
+  if (!sizeStock) return null;
+
+  if (color) return sizeStock[color] !== undefined ? sizeStock[color] : 0;
+  // No colour variant — grab the single entry
+  const vals = Object.values(sizeStock);
+  return vals.length ? vals[0] : null;
 }
 
 function changeQty(id, delta) {
