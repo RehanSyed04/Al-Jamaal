@@ -206,6 +206,8 @@
         ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">We also offer full length Burqas — with or without sleeves — available to order. Reach out via our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll arrange one specially for you.</div>'
         : product.id === 12
         ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">This blanket is available on order — <a href="contact.html" style="color:#8B7355;font-weight:600;">contact us</a> to place yours.</div>'
+        : [7, 8, 49, 50].includes(product.id)
+        ? '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Low stock — also available on order. <a href="contact.html" style="color:#8B7355;font-weight:600;">Contact us</a> to place yours.</div>'
         : '<div style="margin:4px 0 18px;padding:12px 16px;background:#F7F4EF;border-left:3px solid #C9A96E;font-size:13px;color:#666;line-height:1.6;">Interested in a custom order? Use our <a href="contact.html" style="color:#8B7355;font-weight:600;">contact form</a> and we\'ll be happy to assist.</div>';
 
       // Color selector — dynamic from product.colors, button-based so unavailable colours can be crossed out
