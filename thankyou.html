@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Order Confirmed — Al Jamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/styles.css?v=16">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>
@@ -256,13 +256,13 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
+        <p>&copy; <span class="copyright-year"></span> Al Jamaal Official. All rights reserved.</p>
         <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>
 
-  <script src="js/script.js?v=2"></script>
+  <script src="js/script.js?v=3"></script>
   <script>
     const WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
 
@@ -333,7 +333,7 @@
       if (!order || !order.items || order.items.length === 0) return;
       var items = order.items.map(function(item) {
         return {
-          productId: item.productId,
+          productId: item.productId || parseInt(String(item.id).split('-')[0]),
           stockKey:  item.stockKey || null,
           color:     item.color    || null,
           qty:       item.qty

@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Product — Al Jamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/styles.css?v=16">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>
@@ -130,16 +130,18 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
+        <p>&copy; <span class="copyright-year"></span> Al Jamaal Official. All rights reserved.</p>
         <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>
 
   <script>var products = [];</script>
-  <script src="js/script.js?v=2"></script>
+  <script src="js/script.js?v=3"></script>
   <script>
     const dualSelectorIds = [1, 2, 3, 6, 10, 11, 18, 19, 20, 21, 22, 99];
+
+    window._selectedColor = null;
 
     const params = new URLSearchParams(window.location.search);
     const productId = parseInt(params.get('id'));
@@ -159,7 +161,12 @@
       if (product && product.size_labels && !product.sizeLabels) product.sizeLabels = product.size_labels;
 
       if (!product) {
-        window.location.href = 'products.html';
+        document.getElementById('product-detail').innerHTML =
+          '<div style="text-align:center;padding:60px 20px;">' +
+            '<p style="font-size:17px;color:#555;margin-bottom:20px;">Could not load this product. Please check your connection and try again.</p>' +
+            '<button onclick="window.location.reload()" class="btn btn-primary" style="margin-right:12px;">Try Again</button>' +
+            '<a href="products.html" class="btn btn-outline" style="border-color:#1A1A1A;color:#1A1A1A;">Back to Products</a>' +
+          '</div>';
         return;
       }
 
@@ -296,23 +303,56 @@
               ${product.scent_profile.reminds_of ? `<tr><td style="padding:7px 0;color:#888;">Reminds Me Of</td><td style="padding:7px 0;">${product.scent_profile.reminds_of}</td></tr>` : ''}
             </table>
           </div>` : ''}
+          ${[3, 51].includes(product.id) ? `
+          <div style="margin-top:28px;border-top:1px solid #E8E2D7;padding-top:24px;">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">Sizing Chart</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:7px 0;color:#888;width:38%;border-bottom:1px solid #f0ece6;">Medium</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">28" — fits up to 32"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">30" — fits up to 34"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">X-Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">32" — fits up to 36"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">2X-Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">34" — fits up to 38"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">3X-Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">35"/36" — up to 40"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">4X-Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">37"/38" — up to 42"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">5X-Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">39"/40" — up to 44"</td></tr>
+              <tr><td style="padding:7px 0;color:#888;">6X-Large</td><td style="padding:7px 0;">41"/42" — up to 46"</td></tr>
+            </table>
+            <p style="margin-top:12px;font-size:12px;color:#aaa;">Measurements are waist circumference when unstretched. The elastic waistband stretches to the fit range shown.</p>
+          </div>` : ''}
+          ${product.id === 11 ? `
+          <div style="margin-top:28px;border-top:1px solid #E8E2D7;padding-top:24px;">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">Sizing Chart</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:7px 0;color:#888;width:38%;border-bottom:1px solid #f0ece6;">1–2 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">11 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">2–3 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">13 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">3–4 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">15 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">4–5 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">16.5 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">5–6 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">18.5 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">6–7 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">22 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">7–8 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">25 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">9–10 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">26.5 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">11–12 Years</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">28 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;">13–14 Years</td><td style="padding:7px 0;">29.5 inches</td></tr>
+            </table>
+            <p style="margin-top:12px;font-size:12px;color:#aaa;">Measurements are the length of the shorts (approximately, not exact).</p>
+          </div>` : ''}
         </div>
       `;
 
       // Related products — same category, excluding current product, max 4
       const related = products
-        .filter(p => p.category === product.category && p.id !== product.id)
+        .filter(p => p.category === product.category && p.id !== product.id && !p.hidden)
         .slice(0, 4);
 
       // If not enough in same category, fill from other products
       if (related.length < 4) {
         const others = products
-          .filter(p => p.id !== product.id && !related.includes(p))
+          .filter(p => p.id !== product.id && !p.hidden && !related.includes(p))
           .slice(0, 4 - related.length);
         related.push(...others);
       }
 
       renderProductGrid('related-products', related);
+      initCardSliderTouch(document.getElementById('related-products'));
       updateStockUI();
       fetchLiveStock();
       }
@@ -925,17 +965,6 @@
       }, { passive: true });
     })();
 
-    // Also init touch for the related products card sliders once rendered
-    (function waitForRelated() {
-      const grid = document.getElementById('related-products');
-      if (grid) {
-        const observer = new MutationObserver(() => {
-          if (typeof initCardSliderTouch === 'function') initCardSliderTouch(grid);
-          observer.disconnect();
-        });
-        observer.observe(grid, { childList: true });
-      }
-    })();
   </script>
 
 </body>

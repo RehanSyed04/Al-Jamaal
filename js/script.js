@@ -86,6 +86,7 @@ const CartManager = {
   /** Empty the entire cart (called after successful payment) */
   clear() {
     localStorage.removeItem('aljamaal_cart');
+    localStorage.removeItem('aljamaal_cart_expiry');
     updateCartBadge();
   }
 };
@@ -495,6 +496,11 @@ function initContactForm() {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
 
+    if (form.message.value.length > 2000) {
+      showToast('Message is too long. Please keep it under 2000 characters.');
+      return;
+    }
+
     const btn = form.querySelector('button[type="submit"]');
     btn.textContent = 'Sending...';
     btn.disabled = true;
@@ -554,6 +560,7 @@ function initSTT() {
    PAGE INIT — runs when the page loads
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.copyright-year').forEach(el => el.textContent = new Date().getFullYear());
   updateCartBadge();
   initMobileMenu();
   initSTT();
@@ -562,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Home page: render 1 featured product from each category
   if (document.getElementById('featured-products')) {
-    const categories = ['Men', 'Women', 'Kids', 'Home & Gifts'];
+    const categories = ['Men', 'Women', 'Kids', 'Home & Gifts', 'Perfumes'];
     const featured = categories.map(cat => products.find(p => p.category === cat && p.badge !== 'Sold Out') || products.find(p => p.category === cat)).filter(Boolean);
     renderProductGrid('featured-products', featured);
     initCardSliderTouch(document.getElementById('featured-products'));

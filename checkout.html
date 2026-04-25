@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Checkout — Al Jamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/styles.css?v=16">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>
@@ -278,13 +278,13 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
+        <p>&copy; <span class="copyright-year"></span> Al Jamaal Official. All rights reserved.</p>
         <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>
 
-  <script src="js/script.js?v=2"></script>
+  <script src="js/script.js?v=3"></script>
   <script>
     const WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
 
@@ -521,23 +521,38 @@
         var cart = CartManager.getCart();
         var outOfStock = [];
         cart.forEach(function(item) {
-          var idStr = String(item.id);
-          var dashIdx = idStr.indexOf('-');
-          if (dashIdx === -1) return;
-          var productId = parseInt(idStr.substring(0, dashIdx));
+          var productId = item.productId || parseInt(String(item.id).split('-')[0]);
           var product = liveProducts.find(function(p) { return p.id === productId; });
-          if (!product || !product.stock || !product.colors) return;
-          var rest = idStr.substring(dashIdx + 1);
-          product.colors.forEach(function(color) {
-            if (rest === color || rest.endsWith('-' + color)) {
-              var stockKey = rest === color ? null : rest.substring(0, rest.length - color.length - 1);
-              if (!stockKey) return;
-              var available = (product.stock[stockKey] && product.stock[stockKey][color]) || 0;
-              if (item.qty > available) {
-                outOfStock.push({ name: item.name, requested: item.qty, available: available });
-              }
+          if (!product || !product.stock) return;
+
+          var stock = product.stock;
+          var available;
+
+          // Flat numeric stock (no sizes, no colours)
+          if (typeof stock === 'number') {
+            available = stock;
+          } else {
+            var stockKey = item.stockKey || null;
+            var color = item.color || null;
+            // Simple products have no stockKey — fall back to __simple__
+            if (!stockKey && stock.__simple__ !== undefined) stockKey = '__simple__';
+            if (!stockKey) return; // can't determine stock — skip
+            var sizeStock = stock[stockKey];
+            if (sizeStock === undefined || sizeStock === null) return;
+            // __simple__ or size-only: flat number
+            if (typeof sizeStock === 'number') {
+              available = sizeStock;
+            } else if (color) {
+              available = sizeStock[color] !== undefined ? sizeStock[color] : 0;
+            } else {
+              // colour-only with no colour on item — skip
+              return;
             }
-          });
+          }
+
+          if (item.qty > available) {
+            outOfStock.push({ name: item.name, requested: item.qty, available: available });
+          }
         });
         return outOfStock.length > 0 ? { ok: false, items: outOfStock } : { ok: true };
       } catch(e) {

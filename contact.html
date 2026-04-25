@@ -144,7 +144,7 @@
 
             <div class="form-group">
               <label for="message">Message</label>
-              <textarea id="message" name="message" rows="5" placeholder="Write your message here..." required></textarea>
+              <textarea id="message" name="message" rows="5" placeholder="Write your message here..." required maxlength="2000"></textarea>
             </div>
 
             <button type="submit" class="btn btn-primary" style="width:100%;">Send Message</button>
@@ -197,14 +197,14 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 Al Jamaal Official. All rights reserved.</p>
+        <p>&copy; <span class="copyright-year"></span> Al Jamaal Official. All rights reserved.</p>
         <p>South Africa &nbsp;·&nbsp; <a href="dashboard.html" style="color:#aaa;font-size:12px;text-decoration:none;">Dashboard</a></p>
       </div>
     </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="js/script.js?v=2"></script>
+  <script src="js/script.js?v=3"></script>
 
 </body>
 </html>

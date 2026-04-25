@@ -103,9 +103,10 @@
   </a>
 
   <div class="footer-note">
-    &copy; 2026 Al Jamaal Official &nbsp;&middot;&nbsp;
+    &copy; <span class="copyright-year"></span> Al Jamaal Official &nbsp;&middot;&nbsp;
     <a href="dashboard.html" style="color:#444;text-decoration:none;font-size:12px;">Dashboard</a>
   </div>
 
+  <script>document.querySelector('.copyright-year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
