@@ -398,6 +398,19 @@ section {
   z-index: 2;
 }
 
+.color-label {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .product-card-info {
   padding: 16px;
 }
@@ -1439,8 +1452,12 @@ section {
 }
 
 @media (max-width: 480px) {
-  .products-grid { grid-template-columns: 1fr; }
+  .products-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .hero h1 { font-size: 36px; }
+  .product-card-info { padding: 10px 12px; }
+  .product-card-info h3 { font-size: 13px; }
+  .product-card-info .price { font-size: 14px; margin-bottom: 10px; }
+  .product-card-info .category { font-size: 10px; margin-bottom: 6px; }
 }
 
 /* ============================================================

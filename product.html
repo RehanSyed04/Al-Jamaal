@@ -7,7 +7,13 @@
     (function() {
       var p = window.location.pathname;
       if (p.indexOf('maintenance.html') !== -1 || p.indexOf('dashboard.html') !== -1) return;
-      if (localStorage.getItem('aljamaal_admin_key')) return;
+      var adminKey = localStorage.getItem('aljamaal_admin_key');
+      if (adminKey) {
+        var expiry = localStorage.getItem('aljamaal_admin_expiry');
+        if (expiry && Date.now() < parseInt(expiry)) return;
+        localStorage.removeItem('aljamaal_admin_key');
+        localStorage.removeItem('aljamaal_admin_expiry');
+      }
       fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
@@ -17,7 +23,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Product — Al Jamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css?v=16">
+  <link rel="stylesheet" href="css/styles.css?v=17">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>
@@ -182,15 +188,16 @@
         ? `<span class="product-detail-badge">${product.badge}</span>`
         : '';
 
-      // Build image slider
-      const allImages = (product.images && product.images.length > 0) ? product.images : (product.image && !product.image.includes('placeholder') ? [product.image] : []);
+      // Build image slider — normalize to {url, label} to handle both old (string) and new (object) format
+      const rawImages = (product.images && product.images.length > 0) ? product.images : (product.image && !product.image.includes('placeholder') ? [product.image] : []);
+      const allImages = rawImages.map(img => typeof img === 'string' ? { url: img, label: '' } : { url: img.url || img, label: img.label || '' });
       let sliderHTML;
       if (allImages.length > 1) {
-        const slides = allImages.map((src, i) => {
-          const isVideo = src.match(/\.(mp4|webm|mov)$/i);
+        const slides = allImages.map((img, i) => {
+          const isVideo = img.url.match(/\.(mp4|webm|mov)$/i);
           const media = isVideo
-            ? `<video controls controlsList="nodownload" disablePictureInPicture style="width:100%;height:100%;object-fit:contain;border-radius:4px;"><source src="${src}" type="video/mp4"></video>`
-            : `<img class="slide-blur" src="${src}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:blur(18px);opacity:0.6;transform:scale(1.1);"><img class="slide-main" src="${src}" alt="${product.name} ${i+1}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;">`;
+            ? `<video controls controlsList="nodownload" disablePictureInPicture style="width:100%;height:100%;object-fit:contain;border-radius:4px;"><source src="${img.url}" type="video/mp4"></video>`
+            : `<img class="slide-blur" src="${img.url}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:blur(18px);opacity:0.6;transform:scale(1.1);"><img class="slide-main" src="${img.url}" alt="${product.name} ${i+1}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;">`;
           return `<div class="slide${i === 0 ? ' active' : ''}">${media}</div>`;
         }).join('');
         sliderHTML = `
@@ -201,7 +208,7 @@
             <div class="slider-dots">${allImages.map((_, i) => `<span class="dot${i===0?' active':''}" onclick="goToSlide(${i})"></span>`).join('')}</div>
           </div>`;
       } else if (allImages.length === 1) {
-        sliderHTML = `<img src="${allImages[0]}" alt="${product.name}" style="width:100%;height:100%;object-fit:contain;">`;
+        sliderHTML = `<img src="${allImages[0].url}" alt="${product.name}" style="width:100%;height:100%;object-fit:contain;">`;
       } else {
         sliderHTML = `<div class="img-placeholder" style="height:100%;"><span>Photo<br>Coming Soon</span></div>`;
       }

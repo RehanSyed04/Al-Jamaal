@@ -177,18 +177,23 @@ function createProductCardHTML(product) {
     ? `From R ${Math.min(...sizePrices).toFixed(2)}`
     : product.price > 0 ? `R ${product.price.toFixed(2)}` : 'Price on request';
 
-  const allImages = (product.images && product.images.length > 0)
+  // Normalize images to {url, label} — handles both old string format and new object format
+  const rawImages = (product.images && product.images.length > 0)
     ? product.images
     : (product.image && !product.image.includes('placeholder') ? [product.image] : []);
+  const allImages = rawImages.map(img =>
+    typeof img === 'string' ? { url: img, label: '' } : { url: img.url || img, label: img.label || '' }
+  );
 
   let imgHTML;
   if (allImages.length > 1) {
-    const slides = allImages.map((src, i) => {
-      const isVideo = src.match(/\.(mp4|webm|mov)$/i);
+    const slides = allImages.map((img, i) => {
+      const isVideo = img.url.match(/\.(mp4|webm|mov)$/i);
       const media = isVideo
-        ? `<video controls controlsList="nodownload" disablePictureInPicture style="width:100%;height:100%;object-fit:cover;"><source src="${src}" type="video/mp4"></video>`
-        : `<img src="${src}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">`;
-      return `<div class="slide${i === 0 ? ' active' : ''}">${media}</div>`;
+        ? `<video controls controlsList="nodownload" disablePictureInPicture style="width:100%;height:100%;object-fit:cover;"><source src="${img.url}" type="video/mp4"></video>`
+        : `<img src="${img.url}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">`;
+      const label = img.label ? `<span class="color-label">${img.label}</span>` : '';
+      return `<div class="slide${i === 0 ? ' active' : ''}">${media}${label}</div>`;
     }).join('');
     imgHTML = `
       <div class="card-slider" data-current="0">
@@ -198,7 +203,8 @@ function createProductCardHTML(product) {
         <div class="slider-dots">${allImages.map((_, i) => `<span class="dot${i===0?' active':''}" onclick="event.preventDefault();cardGoTo(this,${i})"></span>`).join('')}</div>
       </div>`;
   } else if (allImages.length === 1) {
-    imgHTML = `<img src="${allImages[0]}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">`;
+    const label = allImages[0].label ? `<span class="color-label">${allImages[0].label}</span>` : '';
+    imgHTML = `<img src="${allImages[0].url}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">${label}`;
   } else {
     imgHTML = `<div class="img-placeholder"><span>Photo<br>Coming Soon</span></div>`;
   }
@@ -559,6 +565,23 @@ function initSTT() {
 /* ============================================================
    PAGE INIT — runs when the page loads
    ============================================================ */
+function initAdminSession() {
+  if (!localStorage.getItem('aljamaal_admin_key')) return;
+  var activityTimer = null;
+  function resetExpiry() {
+    var mins = parseInt(localStorage.getItem('aljamaal_session_timeout') || '20');
+    localStorage.setItem('aljamaal_admin_expiry', Date.now() + mins * 60 * 1000);
+  }
+  function onActivity() {
+    clearTimeout(activityTimer);
+    activityTimer = setTimeout(resetExpiry, 500);
+  }
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function(evt) {
+    document.addEventListener(evt, onActivity, { passive: true });
+  });
+  resetExpiry();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.copyright-year').forEach(el => el.textContent = new Date().getFullYear());
   updateCartBadge();
@@ -566,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSTT();
   setActiveNavLink();
   initContactForm();
+  initAdminSession();
 
   // Home page: render 1 featured product from each category
   if (document.getElementById('featured-products')) {

@@ -394,6 +394,18 @@
       <div id="maint-alert" style="margin-top:20px;"></div>
     </div>
 
+    <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="margin-bottom:16px;">Session Timeout</div>
+      <label style="font-size:14px;color:#555;margin-bottom:8px;display:block;">Auto-logout after inactivity:</label>
+      <select id="session-timeout-select" onchange="saveSessionTimeout(this.value)" style="padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;">
+        <option value="5">5 minutes</option>
+        <option value="10">10 minutes</option>
+        <option value="15">15 minutes</option>
+        <option value="20" selected>20 minutes</option>
+      </select>
+      <p style="font-size:13px;color:#888;margin-top:10px;">If you're inactive for this long, you'll be logged out automatically.</p>
+    </div>
+
   </div>
 
 </div>
@@ -520,7 +532,7 @@
   var adminKey = '';
   var allProducts = [];
   var allStock = {};
-  var galleryImages = []; // { key, url } — tracks images in the product form
+  var galleryImages = []; // { key, url, label } — tracks images in the product form
   var currentProductHidden = 0;
 
   function renderImageGallery() {
@@ -532,11 +544,15 @@
     }
     document.getElementById('pf-image').value = galleryImages[0].url;
     el.innerHTML = galleryImages.map(function(img, i) {
-      return '<div style="position:relative;width:100px;text-align:center;">' +
+      return '<div style="position:relative;width:120px;text-align:center;">' +
         (i === 0 ? '<div style="font-size:10px;color:#C9A96E;font-weight:700;margin-bottom:4px;">PRIMARY</div>'
                  : '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">#' + (i + 1) + '</div>') +
         '<img src="' + img.url + '" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:' + (i === 0 ? '2px solid #C9A96E' : '1px solid #ddd') + ';">' +
-        '<div style="display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap;">' +
+        '<input type="text" placeholder="Color label (optional)" value="' + (img.label || '') + '" ' +
+          'oninput="galleryImages[' + i + '].label=this.value" ' +
+          'style="width:100%;margin-top:6px;padding:3px 6px;font-size:11px;border:1px solid #ddd;border-radius:3px;box-sizing:border-box;" ' +
+          'title="Optional label shown on this image (e.g. Black)">' +
+        '<div style="display:flex;gap:4px;justify-content:center;margin-top:4px;flex-wrap:wrap;">' +
           (i > 0 ? '<button type="button" onclick="moveGalleryImage(' + i + ',-1)" style="padding:2px 6px;font-size:11px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;">&#9664;</button>' : '') +
           (i < galleryImages.length - 1 ? '<button type="button" onclick="moveGalleryImage(' + i + ',1)" style="padding:2px 6px;font-size:11px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;">&#9654;</button>' : '') +
           '<a href="' + img.url + '" download target="_blank" style="padding:2px 6px;font-size:11px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;text-decoration:none;color:inherit;" title="Download">&#8595;</a>' +
@@ -576,7 +592,7 @@
           body: formData
         });
         var data = await res.json();
-        if (data.ok) { galleryImages.push({ key: data.key, url: data.url }); uploaded++; }
+        if (data.ok) { galleryImages.push({ key: data.key, url: data.url, label: '' }); uploaded++; }
         else { statusEl.textContent = 'Error: ' + (data.error || 'Upload failed'); }
       } catch(e) { statusEl.textContent = 'Network error during upload'; }
     }
@@ -605,6 +621,8 @@
         adminKey = pw;
         sessionStorage.setItem('aljamaal_admin_key', pw);
         localStorage.setItem('aljamaal_admin_key', pw);
+        var mins = parseInt(localStorage.getItem('aljamaal_session_timeout') || '20');
+        localStorage.setItem('aljamaal_admin_expiry', Date.now() + mins * 60 * 1000);
         showDashboard();
       } else {
         document.getElementById('login-error').style.display = 'block';
@@ -617,6 +635,7 @@
   function doLogout() {
     sessionStorage.removeItem('aljamaal_admin_key');
     localStorage.removeItem('aljamaal_admin_key');
+    localStorage.removeItem('aljamaal_admin_expiry');
     adminKey = '';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
@@ -888,9 +907,13 @@
       document.getElementById('pf-bubble-selector').checked = !!p.bubble_selector;
       galleryImages = [];
       if (p.images && p.images.length) {
-        p.images.forEach(function(url) { if (url) galleryImages.push({ key: '', url: url }); });
+        p.images.forEach(function(img) {
+          if (!img) return;
+          if (typeof img === 'string') galleryImages.push({ key: '', url: img, label: '' });
+          else galleryImages.push({ key: '', url: img.url || img, label: img.label || '' });
+        });
       } else if (p.image) {
-        galleryImages.push({ key: '', url: p.image });
+        galleryImages.push({ key: '', url: p.image, label: '' });
       }
       renderImageGallery();
       (p.size_labels || []).forEach(function(lbl) { addSizeLabelRow(lbl); });
@@ -1011,7 +1034,7 @@
       return;
     }
 
-    var images = galleryImages.map(function(img) { return img.url; });
+    var images = galleryImages.map(function(img) { return img.label ? { url: img.url, label: img.label } : img.url; });
     var sizeLabels = Array.from(document.querySelectorAll('#pf-size-labels-list .list-row input'))
       .map(function(i) { return i.value.trim(); }).filter(Boolean);
     var sizes = Array.from(document.querySelectorAll('#pf-sizes-list .list-row')).map(function(row) {
@@ -1241,6 +1264,15 @@
       document.getElementById('maint-toggle').checked = data.maintenance;
       document.getElementById('maint-label').textContent = data.maintenance ? 'Maintenance is ON' : 'Maintenance is OFF';
     } catch (e) {}
+    var saved = localStorage.getItem('aljamaal_session_timeout') || '20';
+    document.getElementById('session-timeout-select').value = saved;
+  }
+
+  function saveSessionTimeout(val) {
+    localStorage.setItem('aljamaal_session_timeout', val);
+    if (localStorage.getItem('aljamaal_admin_key')) {
+      localStorage.setItem('aljamaal_admin_expiry', Date.now() + parseInt(val) * 60 * 1000);
+    }
   }
 
   async function setMaintenance(on) {

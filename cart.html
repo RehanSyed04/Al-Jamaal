@@ -7,7 +7,13 @@
     (function() {
       var p = window.location.pathname;
       if (p.indexOf('maintenance.html') !== -1 || p.indexOf('dashboard.html') !== -1) return;
-      if (localStorage.getItem('aljamaal_admin_key')) return;
+      var adminKey = localStorage.getItem('aljamaal_admin_key');
+      if (adminKey) {
+        var expiry = localStorage.getItem('aljamaal_admin_expiry');
+        if (expiry && Date.now() < parseInt(expiry)) return;
+        localStorage.removeItem('aljamaal_admin_key');
+        localStorage.removeItem('aljamaal_admin_expiry');
+      }
       fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
@@ -17,7 +23,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>My Cart — Al Jamaal Official</title>
-  <link rel="stylesheet" href="css/styles.css?v=16">
+  <link rel="stylesheet" href="css/styles.css?v=17">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>

@@ -7,7 +7,13 @@
     (function() {
       var p = window.location.pathname;
       if (p.indexOf('maintenance.html') !== -1 || p.indexOf('dashboard.html') !== -1) return;
-      if (localStorage.getItem('aljamaal_admin_key')) return;
+      var adminKey = localStorage.getItem('aljamaal_admin_key');
+      if (adminKey) {
+        var expiry = localStorage.getItem('aljamaal_admin_expiry');
+        if (expiry && Date.now() < parseInt(expiry)) return;
+        localStorage.removeItem('aljamaal_admin_key');
+        localStorage.removeItem('aljamaal_admin_expiry');
+      }
       fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/maintenance-status')
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.maintenance) window.location.replace('maintenance.html'); })
@@ -18,7 +24,7 @@
   <link rel="icon" type="image/png" href="images/BrandIcon.png">
   <title>Al Jamaal Official — Timeless South African Fashion</title>
   <meta name="description" content="Al Jamaal Official is a family-owned South African clothing brand offering elegant, modest fashion for men, women, and kids.">
-  <link rel="stylesheet" href="css/styles.css?v=16">
+  <link rel="stylesheet" href="css/styles.css?v=17">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHS1NC8DF3"></script>
   <script>
@@ -282,12 +288,9 @@
         var data = await res.json();
         if (!data || !data.length) return;
         products.splice(0, products.length, ...data);
-        var categories = ['Men', 'Women', 'Kids', 'Perfumes'];
-        var featuredOverrides = { 'Men': 2, 'Perfumes': 45 };
-        var featured = categories.map(function(cat) {
-          if (featuredOverrides[cat]) return products.find(function(p) { return p.id === featuredOverrides[cat]; });
-          return products.find(function(p) { return p.category === cat && p.badge !== 'Sold Out'; }) ||
-                 products.find(function(p) { return p.category === cat; });
+        var featuredIds = [1, 2, 6, 10]; // Original, Lightweight, Ladies Khareef, Toddlers Burnoose
+        var featured = featuredIds.map(function(id) {
+          return products.find(function(p) { return p.id === id; });
         }).filter(Boolean);
         renderProductGrid('featured-products', featured);
         initCardSliderTouch(document.getElementById('featured-products'));
