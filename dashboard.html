@@ -654,6 +654,7 @@
   }
 
   function doLogout() {
+    clearInterval(_sessionCheckInterval);
     logEvent('admin_logout', 'Admin logged out');
     sessionStorage.removeItem('aljamaal_admin_key');
     localStorage.removeItem('aljamaal_admin_key');
@@ -665,9 +666,39 @@
     document.getElementById('login-error').style.display = 'none';
   }
 
+  var _sessionCheckInterval = null;
+  var _activityTimer = null;
+
+  function resetSessionExpiry() {
+    var mins = parseInt(localStorage.getItem('aljamaal_session_timeout') || '20');
+    localStorage.setItem('aljamaal_admin_expiry', Date.now() + mins * 60 * 1000);
+  }
+
+  function startSessionWatch() {
+    // Reset expiry on any activity
+    function onActivity() {
+      clearTimeout(_activityTimer);
+      _activityTimer = setTimeout(resetSessionExpiry, 500);
+    }
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function(evt) {
+      document.addEventListener(evt, onActivity, { passive: true });
+    });
+    // Check every 30 seconds if the session has expired
+    clearInterval(_sessionCheckInterval);
+    _sessionCheckInterval = setInterval(function() {
+      var expiry = parseInt(localStorage.getItem('aljamaal_admin_expiry') || '0');
+      if (expiry && Date.now() > expiry) {
+        clearInterval(_sessionCheckInterval);
+        alert('Your session has expired due to inactivity. Please log in again.');
+        doLogout();
+      }
+    }, 30000);
+  }
+
   function showDashboard() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
+    startSessionWatch();
     loadProducts().then(function() { loadOverview(); });
   }
 
