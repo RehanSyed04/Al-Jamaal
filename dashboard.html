@@ -1139,7 +1139,11 @@
           if (old.category !== undefined && old.category !== product.category) changes.push('category: ' + old.category + ' → ' + product.category);
           if (old.price !== undefined && old.price !== product.price) changes.push('price: R' + old.price + ' → R' + product.price);
           if (old.badge !== undefined && (old.badge || '') !== (product.badge || '')) changes.push('badge: "' + (old.badge || 'none') + '" → "' + (product.badge || 'none') + '"');
-          if (old.description !== undefined && (old.description || '') !== (product.description || '')) changes.push('description updated');
+          if (old.description !== undefined && (old.description || '') !== (product.description || '')) {
+            var oldDesc = (old.description || '').slice(0, 60) + ((old.description || '').length > 60 ? '…' : '');
+            var newDesc = (product.description || '').slice(0, 60) + ((product.description || '').length > 60 ? '…' : '');
+            changes.push('description: "' + oldDesc + '" → "' + newDesc + '"');
+          }
           if (old.sizes !== undefined && JSON.stringify(old.sizes) !== JSON.stringify(sizes)) changes.push('sizes updated');
           if (old.colors !== undefined && JSON.stringify(old.colors) !== JSON.stringify(colors)) changes.push('colours updated');
           logDesc = 'Edited: ' + name + ' (ID ' + id + ')' + (changes.length ? ' — ' + changes.join(', ') : ' — no field changes');
