@@ -913,7 +913,11 @@
         headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
         body: JSON.stringify({ orders: orders })
       });
-      if (res.ok) logEvent('product_reordered', 'Product sort order updated');
+      if (res.ok) {
+        var ordered = allProducts.slice().sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+        var names = ordered.map(function(p) { return p.name; }).join(' → ');
+        logEvent('product_reordered', 'Sort order: ' + names);
+      }
     } catch(e) {}
   }
 
