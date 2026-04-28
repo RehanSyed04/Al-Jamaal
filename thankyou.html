@@ -276,10 +276,14 @@
       const raw = localStorage.getItem('aljamaal_last_order');
       if (!raw) { renderOrderSummary(null); bookShipment(null); return; }
 
+      // Remove immediately — before any async work — so a refresh cannot re-fire
+      localStorage.removeItem('aljamaal_last_order');
+      CartManager.clear();
+      updateCartBadge();
+
       let order;
       try { order = JSON.parse(raw); } catch (e) { order = null; }
 
-      // Display summary first, then process shipment booking
       renderOrderSummary(order);
       decrementStock(order);
       bookShipment(order);
@@ -366,11 +370,6 @@
     /* ---- TCG shipment booking ---- */
     async function bookShipment(order) {
       if (!order) { showStatus('idle'); return; }
-
-      // Remove immediately so a page refresh cannot re-book
-      localStorage.removeItem('aljamaal_last_order');
-      CartManager.clear();
-      updateCartBadge();
 
       showStatus('loading');
 
