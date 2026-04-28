@@ -1131,9 +1131,22 @@
       if (res.ok) {
         showSaveMsg('<div class="alert alert-success">Saved! Loading updated list...</div>');
         var isEdit = !!document.getElementById('pf-id').value;
-        logEvent(isEdit ? 'product_edited' : 'product_added',
-          (isEdit ? 'Edited' : 'Added') + ': ' + name + ' (ID ' + id + ')',
-          { id: id, name: name, category: product.category });
+        var logDesc;
+        if (isEdit) {
+          var old = allProducts.find(function(x) { return x.id === id; }) || {};
+          var changes = [];
+          if (old.name !== undefined && old.name !== name) changes.push('name: "' + old.name + '" → "' + name + '"');
+          if (old.category !== undefined && old.category !== product.category) changes.push('category: ' + old.category + ' → ' + product.category);
+          if (old.price !== undefined && old.price !== product.price) changes.push('price: R' + old.price + ' → R' + product.price);
+          if (old.badge !== undefined && (old.badge || '') !== (product.badge || '')) changes.push('badge: "' + (old.badge || 'none') + '" → "' + (product.badge || 'none') + '"');
+          if (old.description !== undefined && (old.description || '') !== (product.description || '')) changes.push('description updated');
+          if (old.sizes !== undefined && JSON.stringify(old.sizes) !== JSON.stringify(sizes)) changes.push('sizes updated');
+          if (old.colors !== undefined && JSON.stringify(old.colors) !== JSON.stringify(colors)) changes.push('colours updated');
+          logDesc = 'Edited: ' + name + ' (ID ' + id + ')' + (changes.length ? ' — ' + changes.join(', ') : ' — no field changes');
+        } else {
+          logDesc = 'Added: ' + name + ' (ID ' + id + ', ' + product.category + ')';
+        }
+        logEvent(isEdit ? 'product_edited' : 'product_added', logDesc, { id: id, name: name, category: product.category });
         // Update local cache immediately so reopening edit shows correct values
         var existing = allProducts.findIndex(function(x) { return x.id === id; });
         if (existing >= 0) allProducts[existing] = Object.assign(allProducts[existing], product);
