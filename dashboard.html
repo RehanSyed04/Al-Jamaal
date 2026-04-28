@@ -897,15 +897,17 @@
     e.preventDefault();
     e.currentTarget.style.borderTop = '';
     if (dragSrcIndex === null || dragSrcIndex === targetIndex) { dragSrcIndex = null; return; }
+    var fromPos = dragSrcIndex + 1;
+    var toPos = targetIndex + 1;
     var moved = allProducts.splice(dragSrcIndex, 1)[0];
     allProducts.splice(targetIndex, 0, moved);
     allProducts.forEach(function(p, i) { p.sort_order = i; });
     dragSrcIndex = null;
     renderProductsTable();
-    await saveSortOrders();
+    await saveSortOrders(moved.name, fromPos, toPos);
   }
 
-  async function saveSortOrders() {
+  async function saveSortOrders(movedName, fromPos, toPos) {
     var orders = allProducts.map(function(p) { return { id: p.id, sort_order: p.sort_order }; });
     try {
       var res = await fetch(WORKER_URL + '/set-sort-orders', {
@@ -913,10 +915,8 @@
         headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
         body: JSON.stringify({ orders: orders })
       });
-      if (res.ok) {
-        var ordered = allProducts.slice().sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-        var names = ordered.map(function(p) { return p.name; }).join(' → ');
-        logEvent('product_reordered', 'Sort order: ' + names);
+      if (res.ok && movedName) {
+        logEvent('product_reordered', '"' + movedName + '" moved from position ' + fromPos + ' to position ' + toPos);
       }
     } catch(e) {}
   }
