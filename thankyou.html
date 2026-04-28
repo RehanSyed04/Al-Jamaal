@@ -349,7 +349,14 @@
         await fetch(WORKER_URL + '/decrement-stock', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ items: items })
+          body:    JSON.stringify({
+            items: items,
+            orderMeta: {
+              customerName: order && order.delivery_contact ? order.delivery_contact.name : '',
+              itemCount: order && order.items ? order.items.length : items.length,
+              grandTotal: order ? (order.grand_total || 0) : 0
+            }
+          })
         });
       } catch (err) {
         console.warn('Stock decrement failed (network):', err);

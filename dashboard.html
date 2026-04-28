@@ -306,6 +306,7 @@
     <button class="tab-btn" onclick="showTab('products', this)">Products</button>
     <button class="tab-btn" onclick="showTab('stock', this)">Stock</button>
     <button class="tab-btn" onclick="showTab('settings', this)">Settings</button>
+    <button class="tab-btn" onclick="showTab('logs', this)">Logs</button>
   </div>
 
   <!-- Overview -->
@@ -406,6 +407,18 @@
       <p style="font-size:13px;color:#888;margin-top:10px;">If you're inactive for this long, you'll be logged out automatically.</p>
     </div>
 
+  </div>
+
+  <div class="tab-content" id="tab-logs">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h2 style="font-size:20px;font-weight:700;">Activity Log</h2>
+      <button class="btn btn-outline btn-sm" onclick="loadLogs()">Refresh</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div id="logs-body">
+        <div style="padding:32px;text-align:center;color:#888;">Select the Logs tab to load.</div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -530,6 +543,14 @@
 <script>
   var WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
   var adminKey = '';
+
+  function logEvent(type, description, details) {
+    fetch(WORKER_URL + '/log-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+      body: JSON.stringify({ event_type: type, description: description, details: details || null })
+    }).catch(function() {});
+  }
   var allProducts = [];
   var allStock = {};
   var galleryImages = []; // { key, url, label } — tracks images in the product form
@@ -592,7 +613,7 @@
           body: formData
         });
         var data = await res.json();
-        if (data.ok) { galleryImages.push({ key: data.key, url: data.url, label: '' }); uploaded++; }
+        if (data.ok) { galleryImages.push({ key: data.key, url: data.url, label: '' }); uploaded++; logEvent('image_uploaded', 'Image uploaded: ' + data.url); }
         else { statusEl.textContent = 'Error: ' + (data.error || 'Upload failed'); }
       } catch(e) { statusEl.textContent = 'Network error during upload'; }
     }
@@ -633,6 +654,7 @@
   }
 
   function doLogout() {
+    logEvent('admin_logout', 'Admin logged out');
     sessionStorage.removeItem('aljamaal_admin_key');
     localStorage.removeItem('aljamaal_admin_key');
     localStorage.removeItem('aljamaal_admin_expiry');
@@ -659,6 +681,7 @@
     if (name === 'overview') loadOverview();
     if (name === 'stock') loadStock();
     if (name === 'settings') loadSettings();
+    if (name === 'logs') loadLogs();
   }
 
   // ── Overview ──────────────────────────────────────────────────
@@ -854,11 +877,12 @@
   async function saveSortOrders() {
     var orders = allProducts.map(function(p) { return { id: p.id, sort_order: p.sort_order }; });
     try {
-      await fetch(WORKER_URL + '/set-sort-orders', {
+      var res = await fetch(WORKER_URL + '/set-sort-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
         body: JSON.stringify({ orders: orders })
       });
+      if (res.ok) logEvent('product_reordered', 'Product sort order updated');
     } catch(e) {}
   }
 
@@ -870,8 +894,10 @@
         headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
         body: JSON.stringify({ id: id })
       });
-      if (res.ok) { await loadProducts(); }
-      else { alert('Failed to delete product.'); }
+      if (res.ok) {
+        logEvent('product_deleted', 'Deleted: ' + name + ' (ID ' + id + ')', { id: id });
+        await loadProducts();
+      } else { alert('Failed to delete product.'); }
     } catch (e) { alert('Network error.'); }
   }
 
@@ -961,6 +987,8 @@
         var p = allProducts.find(function(x) { return x.id === id; });
         if (p) p.hidden = newHidden;
         renderProductsTable();
+        var pName = (allProducts.find(function(x) { return x.id === id; }) || {}).name || 'ID ' + id;
+        logEvent(newHidden ? 'product_hidden' : 'product_shown', (newHidden ? 'Hidden' : 'Shown') + ': ' + pName + ' (ID ' + id + ')', { id: id });
       } else {
         alert('Failed to update visibility.');
       }
@@ -1067,6 +1095,10 @@
       });
       if (res.ok) {
         showSaveMsg('<div class="alert alert-success">Saved! Loading updated list...</div>');
+        var isEdit = !!document.getElementById('pf-id').value;
+        logEvent(isEdit ? 'product_edited' : 'product_added',
+          (isEdit ? 'Edited' : 'Added') + ': ' + name + ' (ID ' + id + ')',
+          { id: id, name: name, category: product.category });
         // Update local cache immediately so reopening edit shows correct values
         var existing = allProducts.findIndex(function(x) { return x.id === id; });
         if (existing >= 0) allProducts[existing] = Object.assign(allProducts[existing], product);
@@ -1234,10 +1266,14 @@
           if (!allStock[pid][stockKey]) allStock[pid][stockKey] = {};
           allStock[pid][stockKey][color] = newQty;
         }
+        var oldQty = parseInt(el.getAttribute('data-qty')) || 0;
         el.setAttribute('data-qty', newQty);
         el.textContent = newQty;
         var cls = newQty === 0 ? 'qty-0' : newQty <= 5 ? 'qty-low' : 'qty-ok';
         el.className = 'qty-cell ' + cls;
+        logEvent('stock_updated',
+          'Stock: Product ' + pid + ' [' + (stockKey === '__simple__' ? 'simple' : stockKey + (color ? '/' + color : '')) + ']: ' + oldQty + ' → ' + newQty,
+          { productId: pid, stockKey: stockKey, color: color, oldQty: oldQty, newQty: newQty });
         input.replaceWith(el);
       } catch (e) {
         alert('Network error saving stock. Please try again.');
@@ -1273,6 +1309,61 @@
     if (localStorage.getItem('aljamaal_admin_key')) {
       localStorage.setItem('aljamaal_admin_expiry', Date.now() + parseInt(val) * 60 * 1000);
     }
+    logEvent('session_timeout_changed', 'Session timeout changed to ' + val + ' minutes');
+  }
+
+  async function loadLogs() {
+    var el = document.getElementById('logs-body');
+    if (!el) return;
+    el.innerHTML = '<div style="padding:32px;text-align:center;color:#888;">Loading...</div>';
+    try {
+      var res = await fetch(WORKER_URL + '/get-logs', { headers: { 'X-Admin-Key': adminKey } });
+      var rows = await res.json();
+      if (!rows.length) {
+        el.innerHTML = '<div style="padding:32px;text-align:center;color:#888;">No activity yet.</div>';
+        return;
+      }
+      var html = '<table class="data-table"><thead><tr><th>Time (SAST)</th><th>Event</th><th>Description</th></tr></thead><tbody>';
+      rows.forEach(function(row) {
+        var dt = new Date(row.created_at + 'Z');
+        var time = dt.toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        html += '<tr><td style="font-size:13px;color:#888;white-space:nowrap;">' + time + '</td>' +
+          '<td>' + eventBadge(row.event_type) + '</td>' +
+          '<td style="font-size:14px;">' + escHtml(row.description) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    } catch (e) {
+      el.innerHTML = '<div style="padding:32px;text-align:center;color:#c0392b;">Failed to load logs.</div>';
+    }
+  }
+
+  function eventBadge(type) {
+    var map = {
+      admin_login:             ['#e3f2fd','#1565c0','Login'],
+      admin_logout:            ['#f5f5f5','#555','Logout'],
+      session_timeout_changed: ['#f5f5f5','#555','Settings'],
+      product_added:           ['#e8f5e9','#27ae60','Added'],
+      product_edited:          ['#e3f2fd','#1565c0','Edited'],
+      product_deleted:         ['#fdecea','#c0392b','Deleted'],
+      product_hidden:          ['#fff8e1','#e67e22','Hidden'],
+      product_shown:           ['#e8f5e9','#27ae60','Shown'],
+      product_reordered:       ['#f5f5f5','#555','Reordered'],
+      image_uploaded:          ['#f5f5f5','#555','Image'],
+      stock_updated:           ['#f3e5f5','#7b1fa2','Stock'],
+      stock_depleted:          ['#fdecea','#c0392b','Depleted'],
+      maintenance_on:          ['#fdecea','#c0392b','Maint ON'],
+      maintenance_off:         ['#e8f5e9','#27ae60','Maint OFF'],
+      order_placed:            ['#e8f5e9','#27ae60','Order'],
+      shipment_booked:         ['#e3f2fd','#1565c0','Shipment'],
+      email_sent:              ['#f5f5f5','#555','Email']
+    };
+    var m = map[type] || ['#f5f5f5','#888', type];
+    return '<span style="background:' + m[0] + ';color:' + m[1] + ';font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:3px;">' + m[2] + '</span>';
+  }
+
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   async function setMaintenance(on) {
@@ -1287,6 +1378,7 @@
       if (res.ok) {
         alertEl.innerHTML = '<div class="alert alert-success">Maintenance mode ' + (on ? 'enabled' : 'disabled') + '.</div>';
         setTimeout(function() { alertEl.innerHTML = ''; }, 3000);
+        logEvent(on ? 'maintenance_on' : 'maintenance_off', 'Maintenance mode ' + (on ? 'enabled' : 'disabled'));
       }
     } catch (e) {
       alertEl.innerHTML = '<div class="alert alert-error">Failed to update. Please try again.</div>';
