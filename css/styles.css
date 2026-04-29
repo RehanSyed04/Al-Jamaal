@@ -400,12 +400,12 @@ section {
 
 .color-label {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 24px;
+  left: 8px;
   background: rgba(0,0,0,0.55);
   color: #fff;
-  font-size: 11px;
-  padding: 3px 8px;
+  font-size: 13px;
+  padding: 5px 12px;
   border-radius: 20px;
   z-index: 2;
   pointer-events: none;

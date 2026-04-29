@@ -1150,7 +1150,10 @@
             changes.push('description: "' + oldSnip + '" → "' + newSnip + '"');
           }
           if (old.sizes !== undefined && JSON.stringify(old.sizes) !== JSON.stringify(sizes)) changes.push('sizes updated');
-          if (old.colors !== undefined && JSON.stringify(old.colors) !== JSON.stringify(colors)) changes.push('colours updated');
+          if (old.colors !== undefined && JSON.stringify(old.colors) !== JSON.stringify(colors)) changes.push('colours: "' + (old.colors || []).join(', ') + '" → "' + colors.join(', ') + '"');
+          var oldImgCount = (old.images && old.images.length) || (old.image ? 1 : 0);
+          var newImgCount = images.length || (product.image ? 1 : 0);
+          if (oldImgCount !== newImgCount) changes.push('images: ' + oldImgCount + ' → ' + newImgCount);
           logDesc = 'Edited: ' + name + ' (ID ' + id + ')' + (changes.length ? ' — ' + changes.join(', ') : ' — no field changes');
         } else {
           logDesc = 'Added: ' + name + ' (ID ' + id + ', ' + product.category + ')';
