@@ -592,6 +592,13 @@ export default {
       ).bind(body.product_id, name, body.rating, text, approved, ip, location, sizeColour).run();
       if (existing) {
         await env.DB.prepare('UPDATE reviews SET approved = 0 WHERE id = ?').bind(existing.id).run();
+        await env.DB.prepare('INSERT INTO logs (event_type, description) VALUES (?, ?)')
+          .bind('review_flagged', `Review flagged for spam — "${name}" on product #${body.product_id} (duplicate IP)`).run();
+      } else {
+        const stars = '★'.repeat(body.rating) + '☆'.repeat(5 - body.rating);
+        const meta = [stars, location, sizeColour].filter(Boolean).join(' · ');
+        await env.DB.prepare('INSERT INTO logs (event_type, description) VALUES (?, ?)')
+          .bind('review_submitted', `New review by "${name}" on product #${body.product_id} — ${meta}`).run();
       }
       return json({ ok: true });
     }
