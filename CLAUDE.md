@@ -59,8 +59,8 @@ Built by UMass Boston IT485 Group 8 as a capstone project:
 - DNS records managed by Anthony at disent (anthony.malizio@disent.com)
 
 ### Cloudflare D1 (Database) — LIVE
-- Database name: `aljamaal-stock` | Bound to Worker as `DB`
-- Tables: `products` (all product data), `stock` (per size+colour qty), `settings` (maintenance mode)
+- Database name: `aljamaal-stock` | Database ID: `98226554-456d-4298-a16c-14422af7b872` | Bound to Worker as `DB`
+- Tables: `products`, `stock` (per size+colour qty), `settings` (maintenance mode), `logs` (activity log), `reviews`
 - All product/stock changes go through admin dashboard → Worker → D1
 - **Never edit products-data.js for new products** — use the admin dashboard
 
@@ -71,7 +71,7 @@ Built by UMass Boston IT485 Group 8 as a capstone project:
 
 ### Admin Dashboard
 - URL: `dashboard.html` | Password: `Aljamaal@786` (ADMIN_SECRET in Worker env)
-- Tabs: Overview (low stock alerts), Products (add/edit/reorder), Stock (inline qty editing), Settings (maintenance mode)
+- Tabs: Overview (low stock alerts), Products (add/edit/reorder), Stock (inline qty editing), Reviews (moderate reviews), Settings (maintenance mode)
 - To add a new product: Products tab → fill form → Save. Then Stock tab → set quantities.
 
 ### EmailJS (Contact Form)
@@ -110,7 +110,39 @@ Stylesheet links use `?v=N` query param (e.g. `?v=13`). Increment when making br
 
 ---
 
-## Open Bugs (as of Apr 2026)
+## Cloudflare Worker — Deployment (IMPORTANT)
+The Worker is now deployed via **Wrangler CLI**, not the Cloudflare dashboard editor.
+
+- **Source file:** `worker/index.js` (edit this in VS Code)
+- **Config:** `worker/wrangler.toml`
+- **Deploy command:**
+  ```
+  cd /var/www/html/worker && CLOUDFLARE_API_TOKEN=<token> wrangler deploy
+  ```
+- **Cloudflare API Token:** stored in Claude memory only (not committed to git)
+- Always edit `worker/index.js` first, then deploy, then commit to git.
+
+---
+
+## Reviews System (added May 2026)
+- D1 `reviews` table: `id, product_id, reviewer_name, rating, body, approved, ip_address, location, size_colour, created_at`
+- **Spam detection:** IP-based via `CF-Connecting-IP`. First review from an IP auto-approved. Duplicate IP on same product → both flagged (approved=0) for admin review.
+- **Admin moderation:** Reviews tab in dashboard.html — Approve / Remove / Delete per review
+- **Display:** Star rating · name · "Purchased: X · Location · Month Year"
+- **Star filter:** Clickable bars in review summary to filter by rating
+- **Logging:** Every submission logged to activity log (`review_submitted` or `review_flagged`)
+- Worker endpoints: `/submit-review` (POST, public), `/get-reviews` (GET, public), `/get-all-reviews` (GET, admin), `/set-review-status` (POST, admin), `/delete-review` (POST, admin)
+
+---
+
+## Other Features Added (May 2026)
+- **Launch banner:** Dismissible gold banner on all pages — directs customers to WhatsApp for stock confirmation. Dismissed state stored in `sessionStorage`.
+- **Size guides:** Category-based size guides on product pages. Men: chest measurements S–5XL. Kids: length by age. Women: sizing note.
+- **Developer credits:** HTML comment at top of all 10 HTML pages crediting Rehan Syed, Cristian Sarmiento, and Claude Code.
+
+---
+
+## Open Bugs (as of May 2026)
 | # | Description |
 |---|---|
 | 28 | ~~No branded order confirmation email after PayFast payment~~ — resolved Apr 2026 |
@@ -119,10 +151,10 @@ Stylesheet links use `?v=N` query param (e.g. `?v=13`). Increment when making br
 | 37 | ~~PayFast return URL points to disent.com~~ — resolved Apr 2026 |
 | 39 | Non-SA phone numbers clear the phone field — won't fix (SA-only store) |
 | 40 | Mobile remove button on cart doesn't show |
-| 41 | ~~Cart qty + button used static products-data.js stock~~ — fixed Apr 2026 (D1 fetch on cart load) |
-| 42 | ~~Checkout allowed overselling~~ — fixed Apr 2026 (D1 stock check before PayFast submit) |
-| 43 | ~~TCG phone numbers sent as +27XXXXXXXXX~~ — fixed Apr 2026 (normPhone in Worker) |
-| 44 | ~~Worker /get-products didn't include stock data~~ — fixed Apr 2026 (parallel stock JOIN) |
+| 41 | ~~Cart qty + button used static products-data.js stock~~ — fixed Apr 2026 |
+| 42 | ~~Checkout allowed overselling~~ — fixed Apr 2026 |
+| 43 | ~~TCG phone numbers sent as +27XXXXXXXXX~~ — fixed Apr 2026 |
+| 44 | ~~Worker /get-products didn't include stock data~~ — fixed Apr 2026 |
 
 ---
 
