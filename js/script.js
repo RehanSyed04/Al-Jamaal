@@ -593,14 +593,9 @@ function renderReviewStars(rating) {
   return html;
 }
 
-function timeAgo(dateStr) {
-  var diff = Math.floor((Date.now() - new Date(dateStr + 'Z').getTime()) / 1000);
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff / 60) + (Math.floor(diff / 60) === 1 ? ' minute ago' : ' minutes ago');
-  if (diff < 86400) return Math.floor(diff / 3600) + (Math.floor(diff / 3600) === 1 ? ' hour ago' : ' hours ago');
-  if (diff < 604800) return Math.floor(diff / 86400) + (Math.floor(diff / 86400) === 1 ? ' day ago' : ' days ago');
-  if (diff < 2592000) return Math.floor(diff / 604800) + (Math.floor(diff / 604800) === 1 ? ' week ago' : ' weeks ago');
-  return Math.floor(diff / 2592000) + (Math.floor(diff / 2592000) === 1 ? ' month ago' : ' months ago');
+function formatReviewDate(dateStr) {
+  var d = new Date(dateStr + 'Z');
+  return d.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' });
 }
 
 var _reviewRating = 0;
@@ -671,12 +666,18 @@ async function loadProductReviews(productId) {
     listEl.innerHTML = reviews.map(function(r) {
       var safeName = r.reviewer_name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       var safeBody = r.body.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      var safeLoc = r.location ? r.location.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+      var safeSize = r.size_colour ? r.size_colour.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+      var meta = [];
+      if (safeSize) meta.push('Purchased: ' + safeSize);
+      if (safeLoc) meta.push(safeLoc);
+      meta.push(formatReviewDate(r.created_at));
       return '<div style="padding:20px 0;border-top:1px solid #E8E2D7;">' +
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;">' +
           '<div style="font-size:15px;font-weight:700;">' + safeName + '</div>' +
           '<div style="font-size:16px;">' + renderReviewStars(r.rating) + '</div>' +
-          '<div style="font-size:12px;color:#aaa;margin-left:auto;">' + timeAgo(r.created_at) + '</div>' +
         '</div>' +
+        '<div style="font-size:12px;color:#aaa;margin-bottom:10px;">' + meta.join(' · ') + '</div>' +
         '<p style="font-size:15px;color:#444;line-height:1.7;margin:0;">' + safeBody + '</p>' +
       '</div>';
     }).join('');
@@ -690,6 +691,8 @@ async function submitReviewForm(e) {
   var name = document.getElementById('review-name').value.trim();
   var rating = parseInt(document.getElementById('review-rating').value);
   var body = document.getElementById('review-body').value.trim();
+  var location = document.getElementById('review-location').value.trim();
+  var sizeColour = document.getElementById('review-size-colour').value.trim();
   var msgEl = document.getElementById('review-msg');
   var btn = document.getElementById('review-submit-btn');
 
@@ -707,7 +710,7 @@ async function submitReviewForm(e) {
     var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/submit-review', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: productId, reviewer_name: name, rating: rating, body: body })
+      body: JSON.stringify({ product_id: productId, reviewer_name: name, rating: rating, body: body, location: location, size_colour: sizeColour })
     });
     if (!res.ok) throw new Error('failed');
     document.getElementById('review-form').reset();

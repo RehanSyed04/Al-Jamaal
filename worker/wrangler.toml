@@ -1,0 +1,12 @@
+name = "aljamaal-shipping"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aljamaal-stock"
+database_id = "98226554-456d-4298-a16c-14422af7b872"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "aljamaal-images"

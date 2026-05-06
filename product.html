@@ -107,9 +107,19 @@
       <div style="border-top:1px solid #E8E2D7;padding-top:32px;">
         <h3 style="font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;">Write a Review</h3>
         <form id="review-form" onsubmit="submitReviewForm(event)">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+            <div style="flex:1;min-width:200px;">
+              <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Name</label>
+              <input type="text" id="review-name" required maxlength="80" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Location <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa;">(optional)</span></label>
+              <input type="text" id="review-location" maxlength="80" placeholder="e.g. Boston, USA" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+            </div>
+          </div>
           <div style="margin-bottom:16px;">
-            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Name</label>
-            <input type="text" id="review-name" required maxlength="80" style="width:100%;max-width:400px;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">What did you purchase? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa;">(optional — e.g. Large, Navy Blue)</span></label>
+            <input type="text" id="review-size-colour" maxlength="80" placeholder="e.g. Large, Navy Blue" style="width:100%;max-width:400px;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
           </div>
           <div style="margin-bottom:16px;">
             <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Rating</label>
