@@ -94,6 +94,44 @@
     </div>
   </section>
 
+  <!-- Customer Reviews -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <span class="label">What Customers Say</span>
+        <h2 id="reviews-heading">Reviews</h2>
+      </div>
+      <div id="reviews-summary"></div>
+      <div id="reviews-list" style="margin-bottom:40px;"></div>
+      <div style="border-top:1px solid #E8E2D7;padding-top:32px;">
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;">Write a Review</h3>
+        <form id="review-form" onsubmit="submitReviewForm(event)">
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Name</label>
+            <input type="text" id="review-name" required maxlength="80" style="width:100%;max-width:400px;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Rating</label>
+            <div id="star-picker" style="display:flex;gap:4px;font-size:32px;cursor:pointer;line-height:1;">
+              <span data-val="1" onclick="setReviewRating(1)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
+              <span data-val="2" onclick="setReviewRating(2)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
+              <span data-val="3" onclick="setReviewRating(3)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
+              <span data-val="4" onclick="setReviewRating(4)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
+              <span data-val="5" onclick="setReviewRating(5)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
+            </div>
+            <input type="hidden" id="review-rating" value="0">
+          </div>
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Review</label>
+            <textarea id="review-body" required maxlength="1000" rows="4" placeholder="Share your experience with this product..." style="width:100%;max-width:600px;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;resize:vertical;font-family:inherit;line-height:1.6;"></textarea>
+          </div>
+          <button type="submit" id="review-submit-btn" class="btn btn-primary">Submit Review</button>
+          <div id="review-msg" style="margin-top:14px;font-size:14px;"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
@@ -263,6 +301,7 @@
           <p class="product-detail-category">${product.category}</p>
           <h1 class="product-detail-name">${product.name}</h1>
           <p class="product-detail-price" id="product-detail-price">${priceText}</p>
+          <div id="product-rating-summary" style="margin:-4px 0 16px;"></div>
           <p class="product-detail-desc">${product.description}</p>
 
           <div id="size-color-selector" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
@@ -363,6 +402,7 @@
       initCardSliderTouch(document.getElementById('related-products'));
       updateStockUI();
       fetchLiveStock();
+      loadProductReviews(productId);
       }
     })();
 

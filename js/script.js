@@ -563,6 +563,146 @@ function initSTT() {
 }
 
 /* ============================================================
+   REVIEWS — load and submit product reviews
+   ============================================================ */
+function renderReviewStars(rating) {
+  var html = '';
+  for (var i = 1; i <= 5; i++) {
+    html += '<span style="color:' + (i <= rating ? '#C9A84C' : '#E8E2D7') + ';">★</span>';
+  }
+  return html;
+}
+
+function timeAgo(dateStr) {
+  var diff = Math.floor((Date.now() - new Date(dateStr + 'Z').getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + (Math.floor(diff / 60) === 1 ? ' minute ago' : ' minutes ago');
+  if (diff < 86400) return Math.floor(diff / 3600) + (Math.floor(diff / 3600) === 1 ? ' hour ago' : ' hours ago');
+  if (diff < 604800) return Math.floor(diff / 86400) + (Math.floor(diff / 86400) === 1 ? ' day ago' : ' days ago');
+  if (diff < 2592000) return Math.floor(diff / 604800) + (Math.floor(diff / 604800) === 1 ? ' week ago' : ' weeks ago');
+  return Math.floor(diff / 2592000) + (Math.floor(diff / 2592000) === 1 ? ' month ago' : ' months ago');
+}
+
+var _reviewRating = 0;
+
+function setReviewRating(val) {
+  _reviewRating = val;
+  document.getElementById('review-rating').value = val;
+  document.querySelectorAll('#star-picker span').forEach(function(s) {
+    s.style.color = parseInt(s.dataset.val) <= val ? '#C9A84C' : '#E8E2D7';
+  });
+}
+
+async function loadProductReviews(productId) {
+  var listEl = document.getElementById('reviews-list');
+  var summaryEl = document.getElementById('reviews-summary');
+  var headingEl = document.getElementById('reviews-heading');
+  if (!listEl) return;
+
+  try {
+    var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-reviews?product_id=' + productId);
+    if (!res.ok) throw new Error('fetch failed');
+    var reviews = await res.json();
+
+    if (headingEl) headingEl.textContent = reviews.length ? reviews.length + ' Review' + (reviews.length !== 1 ? 's' : '') : 'Reviews';
+
+    var topEl = document.getElementById('product-rating-summary');
+    if (reviews.length === 0) {
+      summaryEl.innerHTML = '';
+      if (topEl) topEl.innerHTML = '';
+      listEl.innerHTML = '<p style="color:#888;font-size:15px;padding:8px 0 24px;">No reviews yet — be the first to leave one below!</p>';
+      return;
+    }
+
+    var avg = reviews.reduce(function(s, r) { return s + r.rating; }, 0) / reviews.length;
+
+    if (topEl) {
+      topEl.innerHTML = '<a href="#reviews-heading" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">' +
+        '<span style="font-size:16px;color:#C9A84C;">' + renderReviewStars(Math.round(avg)) + '</span>' +
+        '<span style="font-size:14px;color:#888;">' + avg.toFixed(1) + ' · ' + reviews.length + ' review' + (reviews.length !== 1 ? 's' : '') + '</span>' +
+      '</a>';
+    }
+
+    var counts = [0, 0, 0, 0, 0];
+    reviews.forEach(function(r) { counts[r.rating - 1]++; });
+    var max = Math.max.apply(null, counts);
+
+    var summaryHTML = '<div style="display:flex;align-items:center;gap:24px;margin-bottom:32px;flex-wrap:wrap;">' +
+      '<div style="text-align:center;">' +
+        '<div style="font-size:52px;font-weight:700;line-height:1;color:#1A1A1A;">' + avg.toFixed(1) + '</div>' +
+        '<div style="font-size:20px;color:#C9A84C;margin:6px 0;">' + renderReviewStars(Math.round(avg)) + '</div>' +
+        '<div style="font-size:13px;color:#888;">' + reviews.length + ' review' + (reviews.length !== 1 ? 's' : '') + '</div>' +
+      '</div>' +
+      '<div style="flex:1;min-width:180px;">';
+    for (var i = 5; i >= 1; i--) {
+      var pct = max > 0 ? (counts[i - 1] / max) * 100 : 0;
+      summaryHTML += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<span style="font-size:13px;color:#555;width:10px;text-align:right;">' + i + '</span>' +
+        '<span style="color:#C9A84C;font-size:13px;">★</span>' +
+        '<div style="flex:1;height:8px;background:#E8E2D7;border-radius:4px;overflow:hidden;">' +
+          '<div style="width:' + pct + '%;height:100%;background:#C9A84C;border-radius:4px;"></div>' +
+        '</div>' +
+        '<span style="font-size:13px;color:#888;width:18px;">' + counts[i - 1] + '</span>' +
+      '</div>';
+    }
+    summaryHTML += '</div></div>';
+    summaryEl.innerHTML = summaryHTML;
+
+    listEl.innerHTML = reviews.map(function(r) {
+      var safeName = r.reviewer_name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      var safeBody = r.body.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return '<div style="padding:20px 0;border-top:1px solid #E8E2D7;">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
+          '<div style="font-size:15px;font-weight:700;">' + safeName + '</div>' +
+          '<div style="font-size:16px;">' + renderReviewStars(r.rating) + '</div>' +
+          '<div style="font-size:12px;color:#aaa;margin-left:auto;">' + timeAgo(r.created_at) + '</div>' +
+        '</div>' +
+        '<p style="font-size:15px;color:#444;line-height:1.7;margin:0;">' + safeBody + '</p>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<p style="color:#888;font-size:14px;">Could not load reviews.</p>';
+  }
+}
+
+async function submitReviewForm(e) {
+  e.preventDefault();
+  var name = document.getElementById('review-name').value.trim();
+  var rating = parseInt(document.getElementById('review-rating').value);
+  var body = document.getElementById('review-body').value.trim();
+  var msgEl = document.getElementById('review-msg');
+  var btn = document.getElementById('review-submit-btn');
+
+  if (!rating) {
+    msgEl.innerHTML = '<span style="color:#c0392b;">Please select a star rating.</span>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  msgEl.innerHTML = '';
+
+  try {
+    var productId = parseInt(new URLSearchParams(window.location.search).get('id'));
+    var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/submit-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId, reviewer_name: name, rating: rating, body: body })
+    });
+    if (!res.ok) throw new Error('failed');
+    document.getElementById('review-form').reset();
+    _reviewRating = 0;
+    document.querySelectorAll('#star-picker span').forEach(function(s) { s.style.color = '#E8E2D7'; });
+    msgEl.innerHTML = '<span style="color:#27ae60;">Thank you for your review! Reviews typically go live within 24 hours.</span>';
+  } catch(e) {
+    msgEl.innerHTML = '<span style="color:#c0392b;">Something went wrong. Please try again.</span>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Review';
+  }
+}
+
+/* ============================================================
    PAGE INIT — runs when the page loads
    ============================================================ */
 function initAdminSession() {

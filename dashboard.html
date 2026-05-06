@@ -307,6 +307,7 @@
     <button class="tab-btn" onclick="showTab('stock', this)">Stock</button>
     <button class="tab-btn" onclick="showTab('settings', this)">Settings</button>
     <button class="tab-btn" onclick="showTab('logs', this)">Logs</button>
+    <button class="tab-btn" onclick="showTab('reviews', this)">Reviews</button>
   </div>
 
   <!-- Overview -->
@@ -418,6 +419,26 @@
       <div id="logs-body">
         <div style="padding:32px;text-align:center;color:#888;">Select the Logs tab to load.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Reviews -->
+  <div class="tab-content" id="tab-reviews">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:20px;font-weight:700;">Reviews</h2>
+      <button class="btn btn-outline" onclick="loadReviews()">↻ Refresh</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product</th><th>Reviewer</th><th>Rating</th><th>Date</th><th>Review</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="reviews-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">Select the Reviews tab to load.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -713,6 +734,7 @@
     if (name === 'stock') loadStock();
     if (name === 'settings') loadSettings();
     if (name === 'logs') loadLogs();
+    if (name === 'reviews') loadReviews();
   }
 
   // ── Overview ──────────────────────────────────────────────────
@@ -1395,6 +1417,72 @@
       el.innerHTML = html;
     } catch (e) {
       el.innerHTML = '<div style="padding:32px;text-align:center;color:#c0392b;">Failed to load logs.</div>';
+    }
+  }
+
+  async function loadReviews() {
+    var tbody = document.getElementById('reviews-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">Loading...</td></tr>';
+    try {
+      var res = await fetch(WORKER_URL + '/get-all-reviews', { headers: { 'X-Admin-Key': adminKey } });
+      var reviews = await res.json();
+      if (!reviews.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#888;">No reviews yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = reviews.map(function(r) {
+        var product = allProducts.find(function(p) { return p.id === r.product_id; });
+        var productName = product ? product.name : 'Product #' + r.product_id;
+        var stars = '';
+        for (var i = 1; i <= 5; i++) stars += '<span style="color:' + (i <= r.rating ? '#C9A84C' : '#ddd') + ';">★</span>';
+        var dt = new Date(r.created_at + 'Z');
+        var date = dt.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+        var safeName = escHtml(r.reviewer_name);
+        var safeBody = escHtml(r.body);
+        var statusBadge = r.approved
+          ? '<span style="background:#e8f5e9;color:#27ae60;font-size:11px;font-weight:700;padding:3px 8px;border-radius:3px;">Live</span>'
+          : '<span style="background:#fff8e1;color:#e67e22;font-size:11px;font-weight:700;padding:3px 8px;border-radius:3px;">Pending</span>';
+        var approveBtn = !r.approved
+          ? '<button class="btn" style="font-size:12px;padding:4px 10px;background:#27ae60;color:#fff;border:none;margin-right:6px;" onclick="setReviewStatus(' + r.id + ',1,this)">Approve</button>'
+          : '';
+        var rejectBtn = r.approved
+          ? '<button class="btn btn-outline" style="font-size:12px;padding:4px 10px;color:#c0392b;border-color:#c0392b;" onclick="setReviewStatus(' + r.id + ',0,this)">Remove</button>'
+          : '<button class="btn btn-outline" style="font-size:12px;padding:4px 10px;color:#c0392b;border-color:#c0392b;" onclick="setReviewStatus(' + r.id + ',-1,this)">Delete</button>';
+        return '<tr>' +
+          '<td style="font-size:14px;">' + productName + '</td>' +
+          '<td style="font-size:14px;">' + safeName + '</td>' +
+          '<td style="font-size:16px;">' + stars + '</td>' +
+          '<td style="font-size:13px;color:#888;white-space:nowrap;">' + date + '</td>' +
+          '<td style="font-size:13px;max-width:280px;">' + safeBody + '</td>' +
+          '<td style="white-space:nowrap;">' + approveBtn + rejectBtn + '</td>' +
+        '</tr>';
+      }).join('');
+    } catch(e) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#c0392b;">Failed to load reviews.</td></tr>';
+    }
+  }
+
+  async function setReviewStatus(id, approved, btn) {
+    btn.disabled = true;
+    try {
+      if (approved === -1) {
+        var res = await fetch(WORKER_URL + '/delete-review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+          body: JSON.stringify({ id: id })
+        });
+        if (res.ok) loadReviews();
+      } else {
+        var res = await fetch(WORKER_URL + '/set-review-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+          body: JSON.stringify({ id: id, approved: approved })
+        });
+        if (res.ok) loadReviews();
+      }
+    } catch(e) {
+      btn.disabled = false;
     }
   }
 
