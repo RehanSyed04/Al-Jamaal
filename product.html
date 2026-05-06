@@ -104,26 +104,27 @@
       </div>
       <div id="reviews-summary"></div>
       <div id="reviews-list" style="margin-bottom:40px;"></div>
-      <div style="border-top:1px solid #E8E2D7;padding-top:32px;">
-        <h3 style="font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;">Write a Review</h3>
+      <div style="border-top:1px solid #E8E2D7;padding-top:40px;max-width:680px;">
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Write a Review</h3>
+        <p style="font-size:14px;color:#888;margin-bottom:28px;">Share your experience to help other customers.</p>
         <form id="review-form" onsubmit="submitReviewForm(event)">
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
             <div style="flex:1;min-width:200px;">
-              <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Name</label>
-              <input type="text" id="review-name" required maxlength="80" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+              <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#444;">Your Name *</label>
+              <input type="text" id="review-name" required maxlength="80" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:4px;font-size:15px;background:#fff;font-family:inherit;transition:border-color 0.2s;" onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#ddd'">
             </div>
             <div style="flex:1;min-width:200px;">
-              <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Location <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa;">(optional)</span></label>
-              <input type="text" id="review-location" maxlength="80" placeholder="e.g. Boston, USA" style="width:100%;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+              <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#444;">Location <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:#aaa;">optional</span></label>
+              <input type="text" id="review-location" maxlength="80" placeholder="e.g. Cape Town, SA" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:4px;font-size:15px;background:#fff;font-family:inherit;transition:border-color 0.2s;" onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#ddd'">
             </div>
           </div>
-          <div style="margin-bottom:16px;">
-            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">What did you purchase? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa;">(optional — e.g. Large, Navy Blue)</span></label>
-            <input type="text" id="review-size-colour" maxlength="80" placeholder="e.g. Large, Navy Blue" style="width:100%;max-width:400px;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;font-family:inherit;">
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#444;">What did you purchase? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:#aaa;">optional</span></label>
+            <input type="text" id="review-size-colour" maxlength="80" placeholder="e.g. Large, Black" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:4px;font-size:15px;background:#fff;font-family:inherit;transition:border-color 0.2s;" onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#ddd'">
           </div>
-          <div style="margin-bottom:16px;">
-            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Rating</label>
-            <div id="star-picker" style="display:flex;gap:4px;font-size:32px;cursor:pointer;line-height:1;">
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;color:#444;">Rating *</label>
+            <div id="star-picker" style="display:flex;gap:6px;font-size:36px;cursor:pointer;line-height:1;">
               <span data-val="1" onclick="setReviewRating(1)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
               <span data-val="2" onclick="setReviewRating(2)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
               <span data-val="3" onclick="setReviewRating(3)" style="color:#E8E2D7;transition:color 0.1s;">★</span>
@@ -132,11 +133,11 @@
             </div>
             <input type="hidden" id="review-rating" value="0">
           </div>
-          <div style="margin-bottom:20px;">
-            <label style="display:block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#555;">Your Review</label>
-            <textarea id="review-body" required maxlength="1000" rows="4" placeholder="Share your experience with this product..." style="width:100%;max-width:600px;padding:10px 14px;border:1px solid #E8E2D7;font-size:15px;background:#fff;resize:vertical;font-family:inherit;line-height:1.6;"></textarea>
+          <div style="margin-bottom:24px;">
+            <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#444;">Your Review *</label>
+            <textarea id="review-body" required maxlength="1000" rows="5" placeholder="Share your experience with this product..." style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:4px;font-size:15px;background:#fff;resize:vertical;font-family:inherit;line-height:1.6;transition:border-color 0.2s;" onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='#ddd'"></textarea>
           </div>
-          <button type="submit" id="review-submit-btn" class="btn btn-primary">Submit Review</button>
+          <button type="submit" id="review-submit-btn" class="btn btn-primary" style="min-width:160px;">Submit Review</button>
           <div id="review-msg" style="margin-top:14px;font-size:14px;"></div>
         </form>
       </div>
@@ -445,6 +446,27 @@
       updateStockUI();
       fetchLiveStock();
       loadProductReviews(productId);
+
+      // Set dynamic placeholder for "What did you purchase?" based on product
+      (function() {
+        var input = document.getElementById('review-size-colour');
+        if (!input || !product) return;
+        var sizes = product.sizes && product.sizes.length ? product.sizes : [];
+        var colours = product.colours && product.colours.length ? product.colours : [];
+        var sizeName = sizes.length ? sizes[0].label || sizes[0].name || sizes[0] : '';
+        var colourName = colours.length ? (typeof colours[0] === 'object' ? colours[0].name : colours[0]) : '';
+        if (product.category === 'Perfumes') {
+          input.placeholder = sizes.length ? 'e.g. ' + sizeName : 'e.g. 50ml';
+        } else if (product.category === 'Kids') {
+          input.placeholder = colours.length ? 'e.g. Age 4-5, ' + colourName : 'e.g. Age 4-5';
+        } else if (sizeName && colourName) {
+          input.placeholder = 'e.g. ' + sizeName + ', ' + colourName;
+        } else if (sizeName) {
+          input.placeholder = 'e.g. ' + sizeName;
+        } else if (colourName) {
+          input.placeholder = 'e.g. ' + colourName;
+        }
+      })();
       }
     })();
 

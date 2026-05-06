@@ -716,7 +716,7 @@ async function submitReviewForm(e) {
     document.getElementById('review-form').reset();
     _reviewRating = 0;
     document.querySelectorAll('#star-picker span').forEach(function(s) { s.style.color = '#E8E2D7'; });
-    msgEl.innerHTML = '<span style="color:#27ae60;">Thank you for your review! Reviews typically go live within 24 hours.</span>';
+    msgEl.innerHTML = '<span style="color:#27ae60;">Thank you for your review! It is now live.</span>';
   } catch(e) {
     msgEl.innerHTML = '<span style="color:#c0392b;">Something went wrong. Please try again.</span>';
   } finally {
