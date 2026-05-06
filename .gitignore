@@ -21,3 +21,7 @@ node_modules/
 
 # Master reference (contains credentials — do not push)
 MASTER_REFERENCE.md
+
+# Wrangler cache
+.wrangler/
+worker/.wrangler/
