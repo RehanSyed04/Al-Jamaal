@@ -1,3 +1,4 @@
+<!-- Developed by Rehan Syed and Cristian Sarmiento with the assistance of Claude Code (claude.ai/code) by Anthropic -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -381,6 +382,37 @@
               <tr><td style="padding:7px 0;color:#888;">13–14 Years</td><td style="padding:7px 0;">29.5 inches</td></tr>
             </table>
             <p style="margin-top:12px;font-size:12px;color:#aaa;">Measurements are the length of the shorts (approximately, not exact).</p>
+          </div>` : ''}
+          ${product.category === 'Men' && ![3, 51].includes(product.id) ? `
+          <div style="margin-top:28px;border-top:1px solid #E8E2D7;padding-top:24px;">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Sizing Guide</h3>
+            <p style="font-size:13px;color:#888;margin-bottom:16px;">Chest measurement of the garment across side to side (±)</p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:7px 0;color:#888;width:38%;border-bottom:1px solid #f0ece6;">Small</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">20 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Medium</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">22 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Large</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">24 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Extra Large (XL)</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">26 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">2XL</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">28 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">3XL</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">30 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">4XL</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">32 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;">5XL</td><td style="padding:7px 0;">34 inches</td></tr>
+            </table>
+            <p style="margin-top:12px;font-size:12px;color:#aaa;">Kurta length or one size shorter — choose based on your preferred fit.</p>
+          </div>` : ''}
+          ${product.category === 'Kids' && product.id !== 11 ? `
+          <div style="margin-top:28px;border-top:1px solid #E8E2D7;padding-top:24px;">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Sizing Guide</h3>
+            <p style="font-size:13px;color:#888;margin-bottom:16px;">Kids items are sized by length</p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr><td style="padding:7px 0;color:#888;width:38%;border-bottom:1px solid #f0ece6;">Baby to Toddlers</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">18 – 28 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;border-bottom:1px solid #f0ece6;">Bigger Kids to Teenagers</td><td style="padding:7px 0;border-bottom:1px solid #f0ece6;">30 – 48 inches</td></tr>
+              <tr><td style="padding:7px 0;color:#888;">Adults</td><td style="padding:7px 0;">50 – 62 inches (Small up to 5XL)</td></tr>
+            </table>
+          </div>` : ''}
+          ${product.category === 'Women' ? `
+          <div style="margin-top:28px;border-top:1px solid #E8E2D7;padding-top:24px;">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">Sizing Guide</h3>
+            <p style="font-size:14px;color:#555;line-height:1.7;">Ladies items are sized by abaya length and dress size. If you are unsure of your size, <a href="contact.html" style="color:#8B7355;font-weight:600;">contact us</a> and we will help you find the right fit.</p>
           </div>` : ''}
         </div>
       `;
