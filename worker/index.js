@@ -595,8 +595,7 @@ export default {
         await env.DB.prepare('INSERT INTO logs (event_type, description) VALUES (?, ?)')
           .bind('review_flagged', `Review flagged for spam — "${name}" on product #${body.product_id} (duplicate IP)`).run();
       } else {
-        const stars = '★'.repeat(body.rating) + '☆'.repeat(5 - body.rating);
-        const meta = [stars, location, sizeColour].filter(Boolean).join(' · ');
+        const meta = [`${body.rating}/5 stars`, location, sizeColour].filter(Boolean).join(' · ');
         await env.DB.prepare('INSERT INTO logs (event_type, description) VALUES (?, ?)')
           .bind('review_submitted', `New review by "${name}" on product #${body.product_id} — ${meta}`).run();
       }
