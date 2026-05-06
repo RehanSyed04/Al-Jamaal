@@ -642,45 +642,107 @@ async function loadProductReviews(productId) {
     reviews.forEach(function(r) { counts[r.rating - 1]++; });
     var max = Math.max.apply(null, counts);
 
-    var summaryHTML = '<div style="display:flex;align-items:center;gap:24px;margin-bottom:32px;flex-wrap:wrap;">' +
-      '<div style="text-align:center;">' +
-        '<div style="font-size:52px;font-weight:700;line-height:1;color:#1A1A1A;">' + avg.toFixed(1) + '</div>' +
-        '<div style="font-size:20px;color:#C9A84C;margin:6px 0;">' + renderReviewStars(Math.round(avg)) + '</div>' +
-        '<div style="font-size:13px;color:#888;">' + reviews.length + ' review' + (reviews.length !== 1 ? 's' : '') + '</div>' +
-      '</div>' +
-      '<div style="flex:1;min-width:180px;">';
-    for (var i = 5; i >= 1; i--) {
-      var pct = max > 0 ? (counts[i - 1] / max) * 100 : 0;
-      summaryHTML += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
-        '<span style="font-size:13px;color:#555;width:10px;text-align:right;">' + i + '</span>' +
-        '<span style="color:#C9A84C;font-size:13px;">★</span>' +
-        '<div style="flex:1;height:8px;background:#E8E2D7;border-radius:4px;overflow:hidden;">' +
-          '<div style="width:' + pct + '%;height:100%;background:#C9A84C;border-radius:4px;"></div>' +
-        '</div>' +
-        '<span style="font-size:13px;color:#888;width:18px;">' + counts[i - 1] + '</span>' +
-      '</div>';
+    function renderReviewList(filter) {
+      var filtered = filter ? reviews.filter(function(r) { return r.rating === filter; }) : reviews;
+      listEl.innerHTML = filtered.map(function(r) {
+        var safeName = r.reviewer_name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var safeBody = r.body.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var safeLoc = r.location ? r.location.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+        var safeSize = r.size_colour ? r.size_colour.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+        var meta = [];
+        if (safeSize) meta.push('Purchased: ' + safeSize);
+        if (safeLoc) meta.push(safeLoc);
+        meta.push(formatReviewDate(r.created_at));
+        return '<div style="padding:20px 0;border-top:1px solid #E8E2D7;">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;">' +
+            '<div style="font-size:15px;font-weight:700;">' + safeName + '</div>' +
+            '<div style="font-size:16px;">' + renderReviewStars(r.rating) + '</div>' +
+          '</div>' +
+          '<div style="font-size:12px;color:#aaa;margin-bottom:10px;">' + meta.join(' · ') + '</div>' +
+          '<p style="font-size:15px;color:#444;line-height:1.7;margin:0;">' + safeBody + '</p>' +
+        '</div>';
+      }).join('') || '<p style="color:#888;font-size:14px;padding:16px 0;">No reviews with this rating.</p>';
     }
-    summaryHTML += '</div></div>';
-    summaryEl.innerHTML = summaryHTML;
 
-    listEl.innerHTML = reviews.map(function(r) {
-      var safeName = r.reviewer_name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      var safeBody = r.body.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      var safeLoc = r.location ? r.location.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-      var safeSize = r.size_colour ? r.size_colour.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-      var meta = [];
-      if (safeSize) meta.push('Purchased: ' + safeSize);
-      if (safeLoc) meta.push(safeLoc);
-      meta.push(formatReviewDate(r.created_at));
-      return '<div style="padding:20px 0;border-top:1px solid #E8E2D7;">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;">' +
-          '<div style="font-size:15px;font-weight:700;">' + safeName + '</div>' +
-          '<div style="font-size:16px;">' + renderReviewStars(r.rating) + '</div>' +
+    var activeFilter = null;
+
+    function renderStarBars() {
+      var barsHTML = '';
+      for (var i = 5; i >= 1; i--) {
+        var pct = max > 0 ? (counts[i - 1] / max) * 100 : 0;
+        var isActive = activeFilter === i;
+        var hasReviews = counts[i - 1] > 0;
+        barsHTML += '<div data-star="' + i + '" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;' +
+          (hasReviews ? 'cursor:pointer;' : 'opacity:0.4;') +
+          'padding:4px 6px;border-radius:4px;' +
+          (isActive ? 'background:#FDF6E3;outline:1px solid #C9A84C;' : '') +
+          '">' +
+          '<span style="font-size:13px;color:#555;width:10px;text-align:right;">' + i + '</span>' +
+          '<span style="color:#C9A84C;font-size:13px;">★</span>' +
+          '<div style="flex:1;height:8px;background:#E8E2D7;border-radius:4px;overflow:hidden;">' +
+            '<div style="width:' + pct + '%;height:100%;background:' + (isActive ? '#A07830' : '#C9A84C') + ';border-radius:4px;transition:width 0.2s;"></div>' +
+          '</div>' +
+          '<span style="font-size:13px;color:#888;width:18px;">' + counts[i - 1] + '</span>' +
+        '</div>';
+      }
+      if (activeFilter) {
+        barsHTML += '<div id="clear-filter" style="font-size:12px;color:#C9A84C;cursor:pointer;margin-top:4px;padding-left:6px;">Show all reviews</div>';
+      }
+      return barsHTML;
+    }
+
+    function buildSummary() {
+      summaryEl.innerHTML = '<div style="display:flex;align-items:center;gap:24px;margin-bottom:32px;flex-wrap:wrap;">' +
+        '<div style="text-align:center;">' +
+          '<div style="font-size:52px;font-weight:700;line-height:1;color:#1A1A1A;">' + avg.toFixed(1) + '</div>' +
+          '<div style="font-size:20px;color:#C9A84C;margin:6px 0;">' + renderReviewStars(Math.round(avg)) + '</div>' +
+          '<div style="font-size:13px;color:#888;">' + reviews.length + ' review' + (reviews.length !== 1 ? 's' : '') + '</div>' +
         '</div>' +
-        '<div style="font-size:12px;color:#aaa;margin-bottom:10px;">' + meta.join(' · ') + '</div>' +
-        '<p style="font-size:15px;color:#444;line-height:1.7;margin:0;">' + safeBody + '</p>' +
+        '<div id="star-bars" style="flex:1;min-width:180px;">' + renderStarBars() + '</div>' +
       '</div>';
-    }).join('');
+
+      document.getElementById('star-bars').addEventListener('click', function(e) {
+        var row = e.target.closest('[data-star]');
+        if (row && counts[parseInt(row.dataset.star) - 1] > 0) {
+          activeFilter = parseInt(row.dataset.star);
+          document.getElementById('star-bars').innerHTML = renderStarBars();
+          attachClearFilter();
+          renderReviewList(activeFilter);
+        }
+        if (e.target.id === 'clear-filter') {
+          activeFilter = null;
+          document.getElementById('star-bars').innerHTML = renderStarBars();
+          renderReviewList(null);
+        }
+      });
+
+      document.getElementById('star-bars').addEventListener('mouseover', function(e) {
+        var row = e.target.closest('[data-star]');
+        if (row && counts[parseInt(row.dataset.star) - 1] > 0 && parseInt(row.dataset.star) !== activeFilter) {
+          row.style.background = '#FAF7F0';
+        }
+      });
+      document.getElementById('star-bars').addEventListener('mouseout', function(e) {
+        var row = e.target.closest('[data-star]');
+        if (row && parseInt(row.dataset.star) !== activeFilter) {
+          row.style.background = '';
+        }
+      });
+    }
+
+    function attachClearFilter() {
+      var clearBtn = document.getElementById('clear-filter');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+          activeFilter = null;
+          document.getElementById('star-bars').innerHTML = renderStarBars();
+          renderReviewList(null);
+        });
+      }
+    }
+
+    buildSummary();
+    renderReviewList(null);
   } catch(e) {
     if (listEl) listEl.innerHTML = '<p style="color:#888;font-size:14px;">Could not load reviews.</p>';
   }
