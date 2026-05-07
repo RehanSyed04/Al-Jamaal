@@ -3,25 +3,6 @@
  * Handles: Shopping cart, mobile menu, toast notifications
  */
 
-/* ── Launch Banner ── */
-(function() {
-  if (sessionStorage.getItem('launch_banner_dismissed')) return;
-  var banner = document.createElement('div');
-  banner.style.cssText = 'background:#C9A84C;color:#fff;text-align:center;padding:10px 48px 10px 16px;font-size:14px;line-height:1.5;position:relative;z-index:999;';
-  banner.innerHTML =
-    'We\'ve just launched! Stock is still being confirmed — please ' +
-    '<a href="https://wa.me/27603023555" target="_blank" rel="noopener" ' +
-    'style="color:#fff;font-weight:700;text-decoration:underline;">check with us on WhatsApp</a> ' +
-    'before placing your order.' +
-    '<button onclick="this.parentElement.remove();sessionStorage.setItem(\'launch_banner_dismissed\',\'1\')" ' +
-    'style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;" ' +
-    'aria-label="Dismiss">&times;</button>';
-  document.addEventListener('DOMContentLoaded', function() {
-    var nav = document.querySelector('nav');
-    if (nav) nav.insertAdjacentElement('afterend', banner);
-    else document.body.prepend(banner);
-  });
-})();
 
 /* ============================================================
    CART MANAGER
