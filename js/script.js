@@ -304,6 +304,15 @@ function getFilteredProducts() {
 
 function applyProductFilters() {
   var filtered = getFilteredProducts();
+  var sortEl = document.getElementById('product-sort');
+  var sortVal = sortEl ? sortEl.value : 'featured';
+  var getPrice = function(p) {
+    return p.sizes && p.sizes.length ? Math.min.apply(null, p.sizes.map(function(s) { return s.price; })) : (p.price || 0);
+  };
+  if (sortVal === 'price-asc')       filtered = filtered.slice().sort(function(a,b) { return getPrice(a) - getPrice(b); });
+  else if (sortVal === 'price-desc') filtered = filtered.slice().sort(function(a,b) { return getPrice(b) - getPrice(a); });
+  else if (sortVal === 'name-asc')   filtered = filtered.slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+  else if (sortVal === 'new')        filtered = filtered.filter(function(p) { return p.badge && p.badge !== 'Sold Out'; });
   renderProductGrid('products-grid', filtered);
   initCardSliderTouch(document.getElementById('products-grid'));
 
