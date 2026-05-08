@@ -32,7 +32,7 @@ const CartManager = {
   /** Add a product to the cart (or increase its quantity if already there) */
   addItem(product) {
     const cart = this.getCart();
-    const existing = cart.find(item => item.id === product.id);
+    const existing = cart.find(item => String(item.id) === String(product.id));
 
     if (existing) {
       existing.qty += 1;
@@ -303,6 +303,7 @@ function getFilteredProducts() {
 }
 
 function applyProductFilters() {
+  if (window._productsLoading) return;
   var filtered = getFilteredProducts();
   var sortEl = document.getElementById('product-sort');
   var sortVal = sortEl ? sortEl.value : 'featured';
@@ -317,7 +318,7 @@ function applyProductFilters() {
   initCardSliderTouch(document.getElementById('products-grid'));
 
   var noResults = document.getElementById('products-no-results');
-  if (noResults) noResults.style.display = filtered.length === 0 ? 'block' : 'none';
+  if (noResults) noResults.style.display = (!window._productsLoading && filtered.length === 0) ? 'block' : 'none';
 }
 
 function initCategoryFilter() {

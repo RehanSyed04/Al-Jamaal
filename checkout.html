@@ -297,7 +297,7 @@
     </div>
   </footer>
 
-  <script src="js/script.js?v=3"></script>
+  <script src="js/script.js?v=4"></script>
   <script>
     const WORKER_URL = 'https://aljamaal-shipping.syedsarmiento.workers.dev';
 
@@ -483,11 +483,11 @@
         const digits = raw.replace(/^\+?27|^0/, '');
         phoneInput.value = '+27' + digits;
       } else {
+        // Non-SA number — copy to order notes so the client has it, but keep it in the field
         const notesEl = document.getElementById('order_notes');
         if (notesEl && !notesEl.value.includes('Phone:')) {
           notesEl.value = (notesEl.value ? notesEl.value + '\n' : '') + 'Phone: ' + phoneInput.value;
         }
-        phoneInput.value = '';
       }
 
       // Save order details to localStorage for thankyou.html to create the TCG shipment
@@ -528,7 +528,7 @@
 
     async function checkStockAvailable() {
       try {
-        var res = await fetch(WORKER_URL + '/get-products?t=' + Date.now());
+        var res = await fetch(WORKER_URL + '/get-products?stock=1&t=' + Date.now());
         if (!res.ok) return { ok: true };
         var liveProducts = await res.json();
         var cart = CartManager.getCart();

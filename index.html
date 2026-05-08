@@ -279,18 +279,22 @@
   </footer>
 
   <script>var products = [];</script>
-  <script src="js/script.js?v=3"></script>
+  <script src="js/script.js?v=4"></script>
   <script>
     (async function() {
       try {
-        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products');
+        var controller = new AbortController();
+        var timeout = setTimeout(function() { controller.abort(); }, 7000);
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products', { signal: controller.signal });
+        clearTimeout(timeout);
         if (!res.ok) return;
         var data = await res.json();
         if (!data || !data.length) return;
         products.splice(0, products.length, ...data);
-        var featuredIds = [1, 2, 6, 10]; // Original, Lightweight, Ladies Khareef, Toddlers Burnoose
-        var featured = featuredIds.map(function(id) {
-          return products.find(function(p) { return p.id === id; });
+        var categories = ['Men', 'Women', 'Kids', 'Home & Gifts', 'Perfumes'];
+        var featured = categories.map(function(cat) {
+          return products.find(function(p) { return p.category === cat && p.badge !== 'Sold Out'; }) ||
+                 products.find(function(p) { return p.category === cat; });
         }).filter(Boolean);
         renderProductGrid('featured-products', featured);
         initCardSliderTouch(document.getElementById('featured-products'));

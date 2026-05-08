@@ -180,11 +180,11 @@
   </footer>
 
   <script>var products = [];</script>
-  <script src="js/script.js?v=3"></script>
+  <script src="js/script.js?v=4"></script>
   <script>
     (async function() {
       try {
-        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products');
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products?stock=1');
         if (!res.ok) return;
         var data = await res.json();
         if (!data || !data.length) return;

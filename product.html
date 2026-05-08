@@ -193,9 +193,13 @@
   </footer>
 
   <script>var products = [];</script>
-  <script src="js/script.js?v=3"></script>
+  <script src="js/script.js?v=4"></script>
   <script>
     const dualSelectorIds = [1, 2, 3, 6, 10, 11, 18, 19, 20, 21, 22, 99];
+
+    function esc(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
     window._selectedColor = null;
 
@@ -205,7 +209,7 @@
 
     (async function() {
       try {
-        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products',
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products?stock=1',
           { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
           var data = await res.json();
@@ -235,7 +239,7 @@
 
       // Build the badge HTML
       const badge = product.badge
-        ? `<span class="product-detail-badge">${product.badge}</span>`
+        ? `<span class="product-detail-badge">${esc(product.badge)}</span>`
         : '';
 
       // Build image slider — normalize to {url, label} to handle both old (string) and new (object) format
@@ -310,8 +314,8 @@
           ${badge}
         </div>
         <div class="product-detail-info">
-          <p class="product-detail-category">${product.category}</p>
-          <h1 class="product-detail-name">${product.name}</h1>
+          <p class="product-detail-category">${esc(product.category)}</p>
+          <h1 class="product-detail-name">${esc(product.name)}</h1>
           <p class="product-detail-price" id="product-detail-price">${priceText}</p>
           <div id="product-rating-summary" style="margin:-4px 0 16px;"></div>
           <p class="product-detail-desc">${product.description}</p>
@@ -347,7 +351,7 @@
           </div>
 
           <div class="product-detail-meta">
-            <p><strong>Category:</strong> ${product.category}</p>
+            <p><strong>Category:</strong> ${esc(product.category)}</p>
             <p><strong>Availability:</strong> ${product.badge === 'Sold Out' ? 'Sold Out' : product.badge === 'Limited' ? 'Limited Stock' : 'In Stock'}</p>
           </div>
           ${product.scent_profile ? `
@@ -472,7 +476,7 @@
 
     async function fetchLiveProduct() {
       try {
-        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products',
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products?stock=1',
           { signal: AbortSignal.timeout(4000) });
         if (!res.ok) return;
         var data = await res.json();

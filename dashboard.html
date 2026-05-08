@@ -623,6 +623,12 @@
     var files = Array.from(input.files);
     if (!files.length) return;
     var statusEl = document.getElementById('img-upload-status');
+    var tooBig = files.filter(function(f) { return f.size > 5 * 1024 * 1024; });
+    if (tooBig.length) {
+      statusEl.textContent = 'Error: ' + tooBig.map(function(f) { return f.name; }).join(', ') + ' exceed the 5MB limit.';
+      input.value = '';
+      return;
+    }
     statusEl.textContent = 'Uploading ' + files.length + ' image(s)...';
     var uploaded = 0;
     for (var i = 0; i < files.length; i++) {
@@ -655,12 +661,22 @@
     });
   });
 
+  var _loginFailCount = 0;
+  var _loginLockUntil = 0;
+
   async function doLogin() {
+    if (Date.now() < _loginLockUntil) {
+      var secs = Math.ceil((_loginLockUntil - Date.now()) / 1000);
+      document.getElementById('login-error').textContent = 'Too many attempts. Try again in ' + secs + 's.';
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
     var pw = document.getElementById('login-password').value.trim();
     if (!pw) return;
     try {
       var res = await fetch(WORKER_URL + '/verify-admin', { method: 'POST', headers: { 'X-Admin-Key': pw } });
       if (res.ok) {
+        _loginFailCount = 0;
         adminKey = pw;
         sessionStorage.setItem('aljamaal_admin_key', pw);
         localStorage.setItem('aljamaal_admin_key', pw);
@@ -668,9 +684,18 @@
         localStorage.setItem('aljamaal_admin_expiry', Date.now() + mins * 60 * 1000);
         showDashboard();
       } else {
+        _loginFailCount++;
+        if (_loginFailCount >= 5) {
+          _loginLockUntil = Date.now() + 30000;
+          _loginFailCount = 0;
+          document.getElementById('login-error').textContent = 'Too many attempts. Locked for 30 seconds.';
+        } else {
+          document.getElementById('login-error').textContent = 'Incorrect password. Try again.';
+        }
         document.getElementById('login-error').style.display = 'block';
       }
     } catch (e) {
+      document.getElementById('login-error').textContent = 'Incorrect password. Try again.';
       document.getElementById('login-error').style.display = 'block';
     }
   }
@@ -922,12 +947,23 @@
     if (dragSrcIndex === null || dragSrcIndex === targetIndex) { dragSrcIndex = null; return; }
     var fromPos = dragSrcIndex + 1;
     var toPos = targetIndex + 1;
+    var previousOrder = allProducts.map(function(p) { return p.id; });
     var moved = allProducts.splice(dragSrcIndex, 1)[0];
     allProducts.splice(targetIndex, 0, moved);
     allProducts.forEach(function(p, i) { p.sort_order = i; });
     dragSrcIndex = null;
     renderProductsTable();
-    await saveSortOrders(moved.name, fromPos, toPos);
+    var ok = await saveSortOrders(moved.name, fromPos, toPos);
+    if (!ok) {
+      // Restore previous order on failure
+      var byId = {};
+      allProducts.forEach(function(p) { byId[p.id] = p; });
+      var restored = previousOrder.map(function(id) { return byId[id]; }).filter(Boolean);
+      restored.forEach(function(p, i) { p.sort_order = i; });
+      allProducts.splice(0, allProducts.length, ...restored);
+      renderProductsTable();
+      alert('Could not save new order — reordering has been undone. Please try again.');
+    }
   }
 
   async function saveSortOrders(movedName, fromPos, toPos) {
@@ -938,10 +974,12 @@
         headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
         body: JSON.stringify({ orders: orders })
       });
-      if (res.ok && movedName) {
-        logEvent('product_reordered', '"' + movedName + '" moved from position ' + fromPos + ' to position ' + toPos);
+      if (res.ok) {
+        if (movedName) logEvent('product_reordered', '"' + movedName + '" moved from position ' + fromPos + ' to position ' + toPos);
+        return true;
       }
-    } catch(e) {}
+      return false;
+    } catch(e) { return false; }
   }
 
   async function deleteProduct(id, name) {

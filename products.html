@@ -153,21 +153,49 @@
     </div>
   </footer>
 
-  <script>var products = [];</script>
-  <script src="js/script.js?v=3"></script>
+  <script>var products = []; window._productsLoading = true;</script>
+  <script src="js/script.js?v=4"></script>
   <script>
     document.getElementById('product-sort').addEventListener('change', applyProductFilters);
 
-    (async function() {
+    var _productsGrid = document.getElementById('products-grid');
+    if (_productsGrid) _productsGrid.innerHTML = '<p style="text-align:center;color:#888;padding:40px 0;font-size:15px;">Loading products...</p>';
+
+    function showProductsError() {
+      var grid = document.getElementById('products-grid');
+      if (grid) grid.innerHTML =
+        '<div style="text-align:center;padding:48px 20px;">' +
+          '<p style="color:#888;font-size:15px;margin-bottom:20px;">Could not load products. Please check your connection and try again.</p>' +
+          '<button onclick="retryLoadProducts()" class="btn btn-primary" style="padding:12px 28px;">Try Again</button>' +
+        '</div>';
+    }
+
+    async function loadProducts() {
       try {
-        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products');
-        if (!res.ok) return;
+        var controller = new AbortController();
+        var timeout = setTimeout(function() { controller.abort(); }, 7000);
+        var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products', { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!res.ok) { showProductsError(); return; }
         var data = await res.json();
-        if (!data || !data.length) return;
+        if (!data || !data.length) { showProductsError(); return; }
         products.splice(0, products.length, ...data);
+        window._productsLoading = false;
         applyProductFilters();
-      } catch(e) {}
-    })();
+      } catch(e) {
+        window._productsLoading = false;
+        showProductsError();
+      }
+    }
+
+    function retryLoadProducts() {
+      var grid = document.getElementById('products-grid');
+      if (grid) grid.innerHTML = '<p style="text-align:center;color:#888;padding:40px 0;font-size:15px;">Loading products...</p>';
+      window._productsLoading = true;
+      loadProducts();
+    }
+
+    loadProducts();
   </script>
 
 </body>

@@ -54,7 +54,7 @@ function parseUA(ua) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 
     const url  = new URL(request.url);
@@ -454,22 +454,35 @@ export default {
 
     if (request.method === 'GET' && path === '/get-products') {
       const isAdmin = request.headers.get('X-Admin-Key') === env.ADMIN_SECRET;
+      const includeStock = isAdmin || url.searchParams.get('stock') === '1';
+
+      // Serve from edge cache for non-admin requests without cache-busting param
+      // Admin always bypasses cache; ?t= param (checkout stock check) also bypasses
+      const canCache = !isAdmin && !url.searchParams.get('t');
+      if (canCache) {
+        const cache = caches.default;
+        const cacheKey = new Request(request.url);
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+      }
+
       const productSql = isAdmin
         ? 'SELECT * FROM products WHERE active = 1 ORDER BY sort_order, id'
         : 'SELECT * FROM products WHERE active = 1 AND (hidden IS NULL OR hidden = 0) ORDER BY sort_order, id';
-      const [productRows, stockRows] = await Promise.all([
-        env.DB.prepare(productSql).all(),
-        env.DB.prepare('SELECT product_id, stock_key, color, qty FROM stock').all()
-      ]);
+      const queries = [env.DB.prepare(productSql).all()];
+      if (includeStock) queries.push(env.DB.prepare('SELECT product_id, stock_key, color, qty FROM stock').all());
+      const [productRows, stockResult] = await Promise.all(queries);
       const stockMap = {};
-      for (const row of (stockRows.results || [])) {
-        const pid = row.product_id;
-        if (!stockMap[pid]) stockMap[pid] = {};
-        if (row.stock_key === '__simple__') {
-          stockMap[pid].__simple__ = row.qty;
-        } else {
-          if (!stockMap[pid][row.stock_key]) stockMap[pid][row.stock_key] = {};
-          stockMap[pid][row.stock_key][row.color] = row.qty;
+      if (includeStock) {
+        for (const row of ((stockResult && stockResult.results) || [])) {
+          const pid = row.product_id;
+          if (!stockMap[pid]) stockMap[pid] = {};
+          if (row.stock_key === '__simple__') {
+            stockMap[pid].__simple__ = row.qty;
+          } else {
+            if (!stockMap[pid][row.stock_key]) stockMap[pid][row.stock_key] = {};
+            stockMap[pid][row.stock_key][row.color] = row.qty;
+          }
         }
       }
       const products = (productRows.results || []).map(function(r) {
@@ -480,11 +493,23 @@ export default {
           size_labels:     JSON.parse(r.size_labels || '[]'),
           bubble_selector: r.bubble_selector === 1,
           parcel_size:     r.parcel_size || 'large',
-          stock:           stockMap[r.id] || null,
+          stock:           includeStock ? (stockMap[r.id] || null) : undefined,
           scent_profile:   r.scent_profile ? JSON.parse(r.scent_profile) : null
         });
       });
-      return json(products);
+
+      const ttl = includeStock ? 60 : 120; // stock: 1 min; product list: 2 min
+      const response = new Response(JSON.stringify(products), {
+        headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${ttl}` }
+      });
+
+      if (canCache) {
+        const cache = caches.default;
+        const cacheKey = new Request(request.url);
+        ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      }
+
+      return response;
     }
 
     if (request.method === 'POST' && path === '/set-product') {
