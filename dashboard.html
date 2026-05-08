@@ -1166,6 +1166,13 @@
       var sizePrice = parseFloat(inputs[1] ? inputs[1].value : '');
       return { size: inputs[0] ? inputs[0].value.trim() : '', price: !isNaN(sizePrice) ? sizePrice : price };
     }).filter(function(s) { return s.size; });
+    sizes.sort(function(a, b) {
+      var numA = parseFloat(a.size), numB = parseFloat(b.size);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      if (!isNaN(numA)) return -1;
+      if (!isNaN(numB)) return 1;
+      return 0;
+    });
     var colors = Array.from(document.querySelectorAll('#pf-colors-list .list-row input'))
       .map(function(i) { return i.value.trim(); }).filter(Boolean);
 
