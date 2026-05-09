@@ -416,6 +416,22 @@
     </div>
 
     <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="margin-bottom:4px;">Featured Products</div>
+      <p style="font-size:13px;color:#888;margin:0 0 16px;">These products show on the homepage. Drag to reorder, or use the arrows.</p>
+      <div id="featured-list" style="margin-bottom:14px;"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="featured-add-select" style="flex:1;max-width:320px;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;">
+          <option value="">— Add a product —</option>
+        </select>
+        <button onclick="featuredAddProduct()" style="padding:8px 16px;background:#f5f5f5;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:14px;font-family:inherit;">+ Add</button>
+      </div>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:12px;">
+        <button onclick="saveFeatured()" class="btn btn-primary" style="padding:10px 24px;">Save</button>
+        <span id="featured-status" style="font-size:13px;"></span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <div class="card-title">Announcements</div>
         <button onclick="showAnnouncementForm(null)" class="btn btn-primary" style="padding:7px 16px;font-size:13px;">+ Add New</button>
@@ -1578,6 +1594,7 @@
     var saved = localStorage.getItem('aljamaal_session_timeout') || '20';
     document.getElementById('session-timeout-select').value = saved;
     loadAnnouncements();
+    loadFeatured();
   }
 
   var _announcements = [];
@@ -1720,6 +1737,100 @@
       });
       return (await res.json()).ok;
     } catch(e) { return false; }
+  }
+
+  // ── Featured Products ──────────────────────────────────────────
+  var _featuredIds = [];
+  var _featuredProducts = [];
+
+  async function loadFeatured() {
+    try {
+      var results = await Promise.all([
+        fetch(WORKER_URL + '/get-featured').then(function(r) { return r.json(); }),
+        fetch(WORKER_URL + '/get-products').then(function(r) { return r.json(); })
+      ]);
+      _featuredIds = Array.isArray(results[0]) ? results[0] : [];
+      _featuredProducts = Array.isArray(results[1]) ? results[1] : [];
+    } catch(e) { _featuredIds = []; _featuredProducts = []; }
+    renderFeaturedList();
+    populateFeaturedDropdown();
+  }
+
+  function renderFeaturedList() {
+    var el = document.getElementById('featured-list');
+    if (!_featuredIds.length) {
+      el.innerHTML = '<p style="color:#aaa;font-size:13px;">No featured products selected.</p>';
+      return;
+    }
+    el.innerHTML = _featuredIds.map(function(id, i) {
+      var p = _featuredProducts.find(function(x) { return x.id === id; });
+      var name = p ? p.name : 'Unknown product (ID ' + id + ')';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;" data-id="' + id + '">' +
+        '<span style="flex:1;font-size:14px;color:#1a1a1a;">' + escH(name) + '</span>' +
+        '<button onclick="featuredMove(' + i + ',-1)" ' + (i === 0 ? 'disabled' : '') + ' style="padding:4px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:13px;">↑</button>' +
+        '<button onclick="featuredMove(' + i + ',1)" ' + (i === _featuredIds.length - 1 ? 'disabled' : '') + ' style="padding:4px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:13px;">↓</button>' +
+        '<button onclick="featuredRemove(' + id + ')" style="padding:4px 10px;background:#fdecea;border:1px solid #f5c6cb;border-radius:4px;cursor:pointer;font-size:13px;color:#c0392b;">Remove</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function populateFeaturedDropdown() {
+    var sel = document.getElementById('featured-add-select');
+    sel.innerHTML = '<option value="">— Add a product —</option>';
+    _featuredProducts.filter(function(p) { return _featuredIds.indexOf(p.id) === -1; })
+      .forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name + ' (' + p.category + ')';
+        sel.appendChild(opt);
+      });
+  }
+
+  function featuredMove(index, dir) {
+    var newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= _featuredIds.length) return;
+    var tmp = _featuredIds[index];
+    _featuredIds[index] = _featuredIds[newIndex];
+    _featuredIds[newIndex] = tmp;
+    renderFeaturedList();
+  }
+
+  function featuredRemove(id) {
+    _featuredIds = _featuredIds.filter(function(x) { return x !== id; });
+    renderFeaturedList();
+    populateFeaturedDropdown();
+  }
+
+  function featuredAddProduct() {
+    var sel = document.getElementById('featured-add-select');
+    var id = parseInt(sel.value);
+    if (!id) return;
+    _featuredIds.push(id);
+    sel.value = '';
+    renderFeaturedList();
+    populateFeaturedDropdown();
+  }
+
+  async function saveFeatured() {
+    var statusEl = document.getElementById('featured-status');
+    statusEl.textContent = 'Saving…'; statusEl.style.color = '#888';
+    try {
+      var res = await fetch(WORKER_URL + '/set-featured', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+        body: JSON.stringify(_featuredIds)
+      });
+      var data = await res.json();
+      if (data.ok) {
+        statusEl.textContent = 'Saved!'; statusEl.style.color = '#27ae60';
+        setTimeout(function() { statusEl.textContent = ''; }, 3000);
+        logEvent('featured_updated', 'Featured products updated: ' + _featuredIds.join(', '));
+      } else {
+        statusEl.textContent = 'Error saving.'; statusEl.style.color = '#c0392b';
+      }
+    } catch(e) {
+      statusEl.textContent = 'Error saving.'; statusEl.style.color = '#c0392b';
+    }
   }
 
   function saveSessionTimeout(val) {

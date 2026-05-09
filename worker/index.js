@@ -441,6 +441,23 @@ export default {
       return json({ maintenance: row ? row.value === 'true' : false });
     }
 
+    if (request.method === 'GET' && path === '/get-featured') {
+      const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'featured_products'").first();
+      if (!row) return json([1, 2, 50, 10]);
+      try { return json(JSON.parse(row.value)); } catch { return json([1, 2, 50, 10]); }
+    }
+
+    if (request.method === 'POST' && path === '/set-featured') {
+      const key = request.headers.get('X-Admin-Key');
+      if (!key || key !== env.ADMIN_SECRET) return json({ error: 'Unauthorized' }, 401);
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      await env.DB.prepare(
+        "INSERT INTO settings (key, value) VALUES ('featured_products', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+      ).bind(JSON.stringify(body)).run();
+      return json({ ok: true });
+    }
+
     if (request.method === 'GET' && path === '/get-announcements') {
       const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'announcements'").first();
       if (!row) return json([]);
