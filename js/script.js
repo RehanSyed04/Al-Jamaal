@@ -3,75 +3,93 @@
  * Handles: Shopping cart, mobile menu, toast notifications
  */
 
-/* ── Customer Popup ── */
+/* ── Announcements (banners + popups) ── */
 (function() {
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  document.addEventListener('DOMContentLoaded', function() {
-    fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-popup')
-      .then(function(r) { return r.json(); })
-      .then(function(popup) {
-        if (!popup || !popup.enabled) return;
-        if (popup.frequency === 'session' && sessionStorage.getItem('popup_seen_' + popup.id)) return;
-        var hasImage = popup.image && popup.image.trim();
-        var hasTitle = popup.title && popup.title.trim();
-        var hasBody  = popup.body  && popup.body.trim();
-        var hasBtn   = popup.button_text && popup.button_url;
-        if (!hasImage && !hasTitle && !hasBody) return;
 
-        var content = '';
-        if (hasImage) content += '<img src="' + esc(popup.image) + '" alt="" style="width:100%;display:block;" onerror="this.style.display=\'none\'">';
-        content += '<div style="padding:24px 24px 20px;">';
-        if (hasTitle) content += '<h2 style="margin:0 0 10px;font-size:20px;font-weight:700;color:#1a1a1a;">' + esc(popup.title) + '</h2>';
-        if (hasBody)  content += '<p style="margin:0 0 16px;color:#555;line-height:1.6;font-size:15px;">' + esc(popup.body) + '</p>';
-        if (hasBtn)   content += '<a href="' + esc(popup.button_url) + '" class="btn btn-primary" style="display:inline-block;text-decoration:none;">' + esc(popup.button_text) + '</a>';
-        content += '</div>';
-
-        var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-
-        var modal = document.createElement('div');
-        modal.style.cssText = 'background:#fff;border-radius:10px;max-width:480px;width:100%;position:relative;overflow:hidden;max-height:90vh;overflow-y:auto;';
-        modal.innerHTML = content;
-
-        var closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '&times;';
-        closeBtn.setAttribute('aria-label', 'Close');
-        closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.45);border:none;color:#fff;font-size:20px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;line-height:1;';
-        closeBtn.addEventListener('click', dismiss);
-        modal.appendChild(closeBtn);
-
-        overlay.appendChild(modal);
-        overlay.addEventListener('click', function(e) { if (e.target === overlay) dismiss(); });
-        document.body.appendChild(overlay);
-
-        function dismiss() {
-          overlay.remove();
-          if (popup.frequency === 'session') sessionStorage.setItem('popup_seen_' + popup.id, '1');
-        }
-      })
-      .catch(function() {});
-  });
-})();
-
-/* ── Launch Banner ── */
-(function() {
-  if (sessionStorage.getItem('launch_banner_dismissed')) return;
-  var banner = document.createElement('div');
-  banner.style.cssText = 'background:#C9A84C;color:#fff;text-align:center;padding:10px 48px 10px 16px;font-size:14px;line-height:1.5;position:relative;z-index:999;';
-  banner.innerHTML =
-    'We\'ve just launched! Stock is still being confirmed — please ' +
-    '<a href="https://wa.me/27603023555" target="_blank" rel="noopener" ' +
-    'style="color:#fff;font-weight:700;text-decoration:underline;">check with us on WhatsApp</a> ' +
-    'before placing your order.' +
-    '<button onclick="this.parentElement.remove();sessionStorage.setItem(\'launch_banner_dismissed\',\'1\')" ' +
-    'style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;" ' +
-    'aria-label="Dismiss">&times;</button>';
-  document.addEventListener('DOMContentLoaded', function() {
+  function showBanner(a) {
+    var seenKey = 'ann_seen_' + a.id;
+    if (a.frequency === 'session' && sessionStorage.getItem(seenKey)) return;
+    var banner = document.createElement('div');
+    banner.style.cssText = 'background:' + (a.bg_color || '#C9A84C') + ';color:#fff;text-align:center;padding:10px 48px 10px 16px;font-size:14px;line-height:1.5;position:relative;z-index:999;';
+    var textNode = document.createTextNode(a.text || '');
+    banner.appendChild(textNode);
+    if (a.button_text && a.button_url) {
+      var link = document.createElement('a');
+      link.href = a.button_url;
+      link.textContent = a.button_text;
+      link.style.cssText = 'color:#fff;font-weight:700;text-decoration:underline;margin-left:4px;';
+      if (/^https?:\/\//i.test(a.button_url)) { link.target = '_blank'; link.rel = 'noopener'; }
+      banner.appendChild(document.createTextNode(' '));
+      banner.appendChild(link);
+    }
+    var closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Dismiss');
+    closeBtn.style.cssText = 'position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;';
+    closeBtn.addEventListener('click', function() {
+      banner.remove();
+      if (a.frequency === 'session') sessionStorage.setItem(seenKey, '1');
+    });
+    banner.appendChild(closeBtn);
     var nav = document.querySelector('nav');
     if (nav) nav.insertAdjacentElement('afterend', banner);
     else document.body.prepend(banner);
+  }
+
+  function showPopup(a) {
+    var seenKey = 'ann_seen_' + a.id;
+    if (a.frequency === 'session' && sessionStorage.getItem(seenKey)) return;
+    var hasImage = a.image && a.image.trim();
+    var hasTitle = a.title && a.title.trim();
+    var hasBody  = a.body  && a.body.trim();
+    var hasBtn   = a.button_text && a.button_url;
+    if (!hasImage && !hasTitle && !hasBody) return;
+    var content = '';
+    if (hasImage) content += '<img src="' + esc(a.image) + '" alt="" style="width:100%;display:block;" onerror="this.style.display=\'none\'">';
+    content += '<div style="padding:24px 24px 20px;">';
+    if (hasTitle) content += '<h2 style="margin:0 0 10px;font-size:20px;font-weight:700;color:#1a1a1a;">' + esc(a.title) + '</h2>';
+    if (hasBody)  content += '<p style="margin:0 0 16px;color:#555;line-height:1.6;font-size:15px;">' + esc(a.body) + '</p>';
+    if (hasBtn)   content += '<a href="' + esc(a.button_url) + '" class="btn btn-primary" style="display:inline-block;text-decoration:none;">' + esc(a.button_text) + '</a>';
+    content += '</div>';
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+    var modal = document.createElement('div');
+    modal.style.cssText = 'background:#fff;border-radius:10px;max-width:480px;width:100%;position:relative;overflow:hidden;max-height:90vh;overflow-y:auto;';
+    modal.innerHTML = content;
+    var closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.45);border:none;color:#fff;font-size:20px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;line-height:1;';
+    closeBtn.addEventListener('click', dismiss);
+    modal.appendChild(closeBtn);
+    overlay.appendChild(modal);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) dismiss(); });
+    document.body.appendChild(overlay);
+    function dismiss() {
+      overlay.remove();
+      if (a.frequency === 'session') sessionStorage.setItem(seenKey, '1');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-announcements')
+      .then(function(r) { return r.json(); })
+      .then(function(list) {
+        if (!Array.isArray(list)) return;
+        var popupShown = false;
+        list.filter(function(a) { return a.enabled; }).forEach(function(a) {
+          if (a.type === 'banner') {
+            showBanner(a);
+          } else if (a.type === 'popup' && !popupShown) {
+            showPopup(a);
+            popupShown = true;
+          }
+        });
+      })
+      .catch(function() {});
   });
 })();
 

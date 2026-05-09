@@ -416,61 +416,99 @@
     </div>
 
     <div class="card" style="margin-top:24px;">
-      <div class="card-title" style="margin-bottom:4px;">Customer Popup</div>
-      <p style="font-size:13px;color:#888;margin:0 0 20px;">Show a popup to customers when they visit the site.</p>
-      <div class="toggle-wrap" style="margin-bottom:20px;">
-        <label class="toggle">
-          <input type="checkbox" id="popup-enabled">
-          <span class="toggle-slider"></span>
-        </label>
-        <div>
-          <div class="toggle-label">Enable popup</div>
-          <div class="toggle-desc">When ON, customers will see this popup on the site.</div>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div class="card-title">Announcements</div>
+        <button onclick="showAnnouncementForm(null)" class="btn btn-primary" style="padding:7px 16px;font-size:13px;">+ Add New</button>
       </div>
-      <div style="display:grid;gap:14px;">
-        <div>
-          <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Frequency</label>
-          <select id="popup-frequency" style="padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;max-width:280px;">
-            <option value="session">Once per session</option>
-            <option value="always">Every visit</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Image URL <span style="font-weight:400;color:#888;">(optional)</span></label>
-          <input type="text" id="popup-image" placeholder="https://..." style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
-        </div>
-        <div>
-          <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Title <span style="font-weight:400;color:#888;">(optional)</span></label>
-          <input type="text" id="popup-title" placeholder="e.g. Eid Sale Now On!" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
-        </div>
-        <div>
-          <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Message <span style="font-weight:400;color:#888;">(optional)</span></label>
-          <textarea id="popup-body" rows="3" placeholder="e.g. Get 20% off all items this weekend only." style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical;"></textarea>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Button Text <span style="font-weight:400;color:#888;">(optional)</span></label>
-            <input type="text" id="popup-btn-text" placeholder="e.g. Shop Now" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+      <p style="font-size:13px;color:#888;margin:0 0 20px;">Banners appear below the nav bar. Popups appear as a centred overlay. Save multiple and enable/disable as needed.</p>
+      <div id="announcement-list"><p style="color:#aaa;font-size:13px;">Loading...</p></div>
+
+      <!-- Add / Edit form -->
+      <div id="announcement-form" style="display:none;border-top:1px solid #eee;margin-top:20px;padding-top:20px;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px;" id="ann-form-title">Add Announcement</div>
+        <div style="display:grid;gap:14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Name <span style="font-weight:400;color:#888;">(internal label)</span></label>
+              <input type="text" id="ann-name" placeholder="e.g. Eid Sale Banner" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Type</label>
+              <select id="ann-type" onchange="toggleAnnFields()" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;">
+                <option value="banner">Header Banner</option>
+                <option value="popup">Main Popup</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Button Link <span style="font-weight:400;color:#888;">(optional)</span></label>
-            <select id="popup-btn-url" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;background:#fff;">
-              <option value="">— None —</option>
-              <option value="products.html">Products</option>
-              <option value="index.html">Home</option>
-              <option value="about.html">About Us</option>
-              <option value="contact.html">Contact</option>
-              <option value="cart.html">Cart</option>
-              <option value="https://wa.me/27603023555">WhatsApp</option>
-              <option value="https://www.instagram.com/aljamaal_official/">Instagram</option>
+            <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Frequency</label>
+            <select id="ann-frequency" style="padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;max-width:280px;">
+              <option value="session">Once per session</option>
+              <option value="always">Every visit</option>
             </select>
           </div>
+          <!-- Banner fields -->
+          <div id="ann-banner-fields">
+            <div style="display:grid;gap:14px;">
+              <div>
+                <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Message</label>
+                <input type="text" id="ann-text" placeholder="e.g. Free delivery on orders over R500!" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Background Colour</label>
+                <select id="ann-bg-color" style="padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;max-width:280px;">
+                  <option value="#C9A84C">Gold (brand)</option>
+                  <option value="#1a1a1a">Dark / Black</option>
+                  <option value="#27ae60">Green</option>
+                  <option value="#c0392b">Red</option>
+                  <option value="#2980b9">Blue</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- Popup fields -->
+          <div id="ann-popup-fields" style="display:none;">
+            <div style="display:grid;gap:14px;">
+              <div>
+                <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Image URL <span style="font-weight:400;color:#888;">(optional)</span></label>
+                <input type="text" id="ann-image" placeholder="https://..." style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Title <span style="font-weight:400;color:#888;">(optional)</span></label>
+                <input type="text" id="ann-title" placeholder="e.g. Eid Sale Now On!" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Message <span style="font-weight:400;color:#888;">(optional)</span></label>
+                <textarea id="ann-body" rows="3" placeholder="e.g. Get 20% off all items this weekend." style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical;"></textarea>
+              </div>
+            </div>
+          </div>
+          <!-- Button — shared by both types -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Button Text <span style="font-weight:400;color:#888;">(optional)</span></label>
+              <input type="text" id="ann-btn-text" placeholder="e.g. Shop Now" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">Button Link <span style="font-weight:400;color:#888;">(optional)</span></label>
+              <select id="ann-btn-url" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;background:#fff;">
+                <option value="">— None —</option>
+                <option value="products.html">Products</option>
+                <option value="index.html">Home</option>
+                <option value="about.html">About Us</option>
+                <option value="contact.html">Contact</option>
+                <option value="cart.html">Cart</option>
+                <option value="https://wa.me/27603023555">WhatsApp</option>
+                <option value="https://www.instagram.com/aljamaal_official/">Instagram</option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
-      <div style="margin-top:18px;display:flex;align-items:center;gap:12px;">
-        <button onclick="savePopup()" class="btn btn-primary" style="padding:10px 24px;">Save Popup</button>
-        <span id="popup-status" style="font-size:13px;"></span>
+        <div style="margin-top:18px;display:flex;align-items:center;gap:12px;">
+          <button onclick="saveAnnouncement()" class="btn btn-primary" style="padding:10px 24px;">Save</button>
+          <button onclick="cancelAnnForm()" style="padding:10px 20px;background:#f5f5f5;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:14px;font-family:inherit;">Cancel</button>
+          <span id="ann-form-status" style="font-size:13px;"></span>
+        </div>
       </div>
     </div>
 
@@ -1534,55 +1572,149 @@
     } catch (e) {}
     var saved = localStorage.getItem('aljamaal_session_timeout') || '20';
     document.getElementById('session-timeout-select').value = saved;
-    try {
-      var popupRes = await fetch(WORKER_URL + '/get-popup');
-      var popup = await popupRes.json();
-      if (popup) {
-        document.getElementById('popup-enabled').checked = !!popup.enabled;
-        document.getElementById('popup-frequency').value = popup.frequency || 'session';
-        document.getElementById('popup-image').value = popup.image || '';
-        document.getElementById('popup-title').value = popup.title || '';
-        document.getElementById('popup-body').value = popup.body || '';
-        document.getElementById('popup-btn-text').value = popup.button_text || '';
-        document.getElementById('popup-btn-url').value = popup.button_url || '';
-      }
-    } catch (e) {}
+    loadAnnouncements();
   }
 
-  async function savePopup() {
-    var statusEl = document.getElementById('popup-status');
-    statusEl.textContent = 'Saving...';
-    statusEl.style.color = '#888';
-    var config = {
-      enabled: document.getElementById('popup-enabled').checked,
-      frequency: document.getElementById('popup-frequency').value,
-      image: document.getElementById('popup-image').value.trim(),
-      title: document.getElementById('popup-title').value.trim(),
-      body: document.getElementById('popup-body').value.trim(),
-      button_text: document.getElementById('popup-btn-text').value.trim(),
-      button_url: document.getElementById('popup-btn-url').value.trim(),
-      id: Date.now()
-    };
+  var _announcements = [];
+  var _editingAnnId = null;
+
+  async function loadAnnouncements() {
     try {
-      var res = await fetch(WORKER_URL + '/set-popup', {
+      var res = await fetch(WORKER_URL + '/get-announcements');
+      var data = await res.json();
+      _announcements = Array.isArray(data) ? data : [];
+    } catch(e) { _announcements = []; }
+    renderAnnouncementList();
+  }
+
+  function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderAnnouncementList() {
+    var el = document.getElementById('announcement-list');
+    if (!_announcements.length) {
+      el.innerHTML = '<p style="color:#aaa;font-size:13px;padding:8px 0;">No announcements yet. Click "+ Add New" to create one.</p>';
+      return;
+    }
+    el.innerHTML = _announcements.map(function(a) {
+      var badge = a.type === 'banner'
+        ? '<span style="background:#e8f4fd;color:#2980b9;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">BANNER</span>'
+        : '<span style="background:#f5eef8;color:#8e44ad;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">POPUP</span>';
+      var preview = (a.type === 'banner' ? a.text : (a.title || a.body)) || '';
+      if (preview.length > 55) preview = preview.substring(0, 55) + '…';
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0;">' +
+        '<label class="toggle" style="flex-shrink:0;"><input type="checkbox"' + (a.enabled ? ' checked' : '') + ' onchange="toggleAnn(' + a.id + ',this.checked)"><span class="toggle-slider"></span></label>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:8px;">' + escH(a.name) + ' ' + badge + '</div>' +
+          '<div style="font-size:12px;color:#888;margin-top:2px;">' + escH(preview) + '</div>' +
+        '</div>' +
+        '<button onclick="showAnnouncementForm(' + a.id + ')" style="padding:6px 14px;background:#f5f5f5;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:13px;font-family:inherit;">Edit</button>' +
+        '<button onclick="deleteAnn(' + a.id + ')" style="padding:6px 14px;background:#fdecea;border:1px solid #f5c6cb;border-radius:4px;cursor:pointer;font-size:13px;color:#c0392b;font-family:inherit;">Delete</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function showAnnouncementForm(id) {
+    _editingAnnId = id || null;
+    document.getElementById('ann-form-title').textContent = id ? 'Edit Announcement' : 'Add Announcement';
+    document.getElementById('ann-form-status').textContent = '';
+    if (id) {
+      var a = _announcements.find(function(x) { return x.id === id; });
+      if (!a) return;
+      document.getElementById('ann-name').value      = a.name || '';
+      document.getElementById('ann-type').value      = a.type || 'banner';
+      document.getElementById('ann-frequency').value = a.frequency || 'session';
+      document.getElementById('ann-text').value      = a.text || '';
+      document.getElementById('ann-bg-color').value  = a.bg_color || '#C9A84C';
+      document.getElementById('ann-image').value     = a.image || '';
+      document.getElementById('ann-title').value     = a.title || '';
+      document.getElementById('ann-body').value      = a.body || '';
+      document.getElementById('ann-btn-text').value  = a.button_text || '';
+      document.getElementById('ann-btn-url').value   = a.button_url || '';
+    } else {
+      ['ann-name','ann-text','ann-image','ann-title','ann-body','ann-btn-text'].forEach(function(fid) { document.getElementById(fid).value = ''; });
+      document.getElementById('ann-type').value      = 'banner';
+      document.getElementById('ann-frequency').value = 'session';
+      document.getElementById('ann-bg-color').value  = '#C9A84C';
+      document.getElementById('ann-btn-url').value   = '';
+    }
+    toggleAnnFields();
+    var formEl = document.getElementById('announcement-form');
+    formEl.style.display = 'block';
+    formEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function cancelAnnForm() {
+    document.getElementById('announcement-form').style.display = 'none';
+    _editingAnnId = null;
+  }
+
+  function toggleAnnFields() {
+    var type = document.getElementById('ann-type').value;
+    document.getElementById('ann-banner-fields').style.display = type === 'banner' ? 'block' : 'none';
+    document.getElementById('ann-popup-fields').style.display  = type === 'popup'  ? 'block' : 'none';
+  }
+
+  async function saveAnnouncement() {
+    var statusEl = document.getElementById('ann-form-status');
+    var name = document.getElementById('ann-name').value.trim();
+    if (!name) { statusEl.textContent = 'Please enter a name.'; statusEl.style.color = '#c0392b'; return; }
+    statusEl.textContent = 'Saving…'; statusEl.style.color = '#888';
+    var existing = _editingAnnId ? _announcements.find(function(x) { return x.id === _editingAnnId; }) : null;
+    var a = {
+      id:          _editingAnnId || Date.now(),
+      name:        name,
+      type:        document.getElementById('ann-type').value,
+      enabled:     existing ? existing.enabled : false,
+      frequency:   document.getElementById('ann-frequency').value,
+      text:        document.getElementById('ann-text').value.trim(),
+      bg_color:    document.getElementById('ann-bg-color').value,
+      image:       document.getElementById('ann-image').value.trim(),
+      title:       document.getElementById('ann-title').value.trim(),
+      body:        document.getElementById('ann-body').value.trim(),
+      button_text: document.getElementById('ann-btn-text').value.trim(),
+      button_url:  document.getElementById('ann-btn-url').value
+    };
+    var newList = _editingAnnId
+      ? _announcements.map(function(x) { return x.id === _editingAnnId ? a : x; })
+      : _announcements.concat([a]);
+    var ok = await pushAnnouncements(newList);
+    if (ok) {
+      _announcements = newList;
+      renderAnnouncementList();
+      cancelAnnForm();
+      logEvent('announcement_saved', (_editingAnnId ? 'Updated' : 'Created') + ' announcement: ' + name);
+    } else {
+      statusEl.textContent = 'Error saving.'; statusEl.style.color = '#c0392b';
+    }
+  }
+
+  async function deleteAnn(id) {
+    var a = _announcements.find(function(x) { return x.id === id; });
+    if (!confirm('Delete "' + (a ? a.name : 'this announcement') + '"?')) return;
+    var newList = _announcements.filter(function(x) { return x.id !== id; });
+    var ok = await pushAnnouncements(newList);
+    if (ok) { _announcements = newList; renderAnnouncementList(); if (a) logEvent('announcement_deleted', 'Deleted: ' + a.name); }
+  }
+
+  async function toggleAnn(id, enabled) {
+    var newList = _announcements.map(function(x) { return x.id === id ? Object.assign({}, x, { enabled: enabled }) : x; });
+    var ok = await pushAnnouncements(newList);
+    if (ok) {
+      _announcements = newList;
+      var a = newList.find(function(x) { return x.id === id; });
+      if (a) logEvent('announcement_toggled', (enabled ? 'Enabled' : 'Disabled') + ': ' + a.name);
+    } else { renderAnnouncementList(); }
+  }
+
+  async function pushAnnouncements(list) {
+    try {
+      var res = await fetch(WORKER_URL + '/set-announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
-        body: JSON.stringify(config)
+        body: JSON.stringify(list)
       });
-      var data = await res.json();
-      if (data.ok) {
-        statusEl.textContent = 'Saved!';
-        statusEl.style.color = '#27ae60';
-        setTimeout(function() { statusEl.textContent = ''; }, 3000);
-        logEvent('popup_updated', 'Customer popup ' + (config.enabled ? 'enabled' : 'disabled'));
-      } else {
-        statusEl.textContent = 'Error saving.';
-        statusEl.style.color = '#c0392b';
-      }
-    } catch (e) {
-      statusEl.textContent = 'Error saving.';
-      statusEl.style.color = '#c0392b';
-    }
+      return (await res.json()).ok;
+    } catch(e) { return false; }
   }
 
   function saveSessionTimeout(val) {
