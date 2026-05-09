@@ -441,6 +441,23 @@ export default {
       return json({ maintenance: row ? row.value === 'true' : false });
     }
 
+    if (request.method === 'GET' && path === '/get-popup') {
+      const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'popup_config'").first();
+      if (!row) return json(null);
+      try { return json(JSON.parse(row.value)); } catch { return json(null); }
+    }
+
+    if (request.method === 'POST' && path === '/set-popup') {
+      const key = request.headers.get('X-Admin-Key');
+      if (!key || key !== env.ADMIN_SECRET) return json({ error: 'Unauthorized' }, 401);
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      await env.DB.prepare(
+        "INSERT INTO settings (key, value) VALUES ('popup_config', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+      ).bind(JSON.stringify(body)).run();
+      return json({ ok: true });
+    }
+
     if (request.method === 'POST' && path === '/set-maintenance') {
       const key = request.headers.get('X-Admin-Key');
       if (!key || key !== env.ADMIN_SECRET) return json({ error: 'Unauthorized' }, 401);
@@ -655,6 +672,31 @@ export default {
       return json({ ok: true });
     }
 
+    if (request.method === 'GET' && path === '/export-products') {
+      const rows = await env.DB.prepare(
+        'SELECT * FROM products WHERE active = 1 AND (hidden IS NULL OR hidden = 0) ORDER BY sort_order, id'
+      ).all();
+      const products = (rows.results || []).map(function(r) {
+        return Object.assign({}, r, {
+          images:          JSON.parse(r.images      || '[]'),
+          sizes:           JSON.parse(r.sizes       || '[]'),
+          colors:          JSON.parse(r.colors      || '[]'),
+          size_labels:     JSON.parse(r.size_labels || '[]'),
+          bubble_selector: r.bubble_selector === 1,
+          parcel_size:     r.parcel_size || 'large',
+          scent_profile:   r.scent_profile ? JSON.parse(r.scent_profile) : null
+        });
+      });
+      return new Response('window.productsData = ' + JSON.stringify(products) + ';', {
+        headers: { ...CORS, 'Content-Type': 'application/javascript', 'Cache-Control': 'no-cache' }
+      });
+    }
+
     return new Response('Not Found', { status: 404, headers: CORS });
+  },
+
+  async scheduled(event, env, ctx) {
+    // Keeps D1 warm — runs every 5 minutes via cron trigger
+    await env.DB.prepare('SELECT 1 FROM products LIMIT 1').first();
   }
 };

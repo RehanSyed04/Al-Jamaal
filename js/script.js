@@ -3,6 +3,58 @@
  * Handles: Shopping cart, mobile menu, toast notifications
  */
 
+/* ── Customer Popup ── */
+(function() {
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-popup')
+      .then(function(r) { return r.json(); })
+      .then(function(popup) {
+        if (!popup || !popup.enabled) return;
+        if (popup.frequency === 'session' && sessionStorage.getItem('popup_seen_' + popup.id)) return;
+        var hasImage = popup.image && popup.image.trim();
+        var hasTitle = popup.title && popup.title.trim();
+        var hasBody  = popup.body  && popup.body.trim();
+        var hasBtn   = popup.button_text && popup.button_url;
+        if (!hasImage && !hasTitle && !hasBody) return;
+
+        var content = '';
+        if (hasImage) content += '<img src="' + esc(popup.image) + '" alt="" style="width:100%;display:block;" onerror="this.style.display=\'none\'">';
+        content += '<div style="padding:24px 24px 20px;">';
+        if (hasTitle) content += '<h2 style="margin:0 0 10px;font-size:20px;font-weight:700;color:#1a1a1a;">' + esc(popup.title) + '</h2>';
+        if (hasBody)  content += '<p style="margin:0 0 16px;color:#555;line-height:1.6;font-size:15px;">' + esc(popup.body) + '</p>';
+        if (hasBtn)   content += '<a href="' + esc(popup.button_url) + '" class="btn btn-primary" style="display:inline-block;text-decoration:none;">' + esc(popup.button_text) + '</a>';
+        content += '</div>';
+
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+
+        var modal = document.createElement('div');
+        modal.style.cssText = 'background:#fff;border-radius:10px;max-width:480px;width:100%;position:relative;overflow:hidden;max-height:90vh;overflow-y:auto;';
+        modal.innerHTML = content;
+
+        var closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.setAttribute('aria-label', 'Close');
+        closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.45);border:none;color:#fff;font-size:20px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;line-height:1;';
+        closeBtn.addEventListener('click', dismiss);
+        modal.appendChild(closeBtn);
+
+        overlay.appendChild(modal);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) dismiss(); });
+        document.body.appendChild(overlay);
+
+        function dismiss() {
+          overlay.remove();
+          if (popup.frequency === 'session') sessionStorage.setItem('popup_seen_' + popup.id, '1');
+        }
+      })
+      .catch(function() {});
+  });
+})();
+
 /* ── Launch Banner ── */
 (function() {
   if (sessionStorage.getItem('launch_banner_dismissed')) return;
