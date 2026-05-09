@@ -14,16 +14,30 @@
     if (a.frequency === 'session' && sessionStorage.getItem(seenKey)) return;
     var banner = document.createElement('div');
     banner.style.cssText = 'background:' + (a.bg_color || '#C9A84C') + ';color:#fff;text-align:center;padding:10px 48px 10px 16px;font-size:14px;line-height:1.5;position:relative;z-index:999;';
-    var textNode = document.createTextNode(a.text || '');
-    banner.appendChild(textNode);
-    if (a.button_text && a.button_url) {
+    var text = a.text || '';
+    if (a.button_text && a.button_url && text.indexOf(a.button_text) !== -1) {
+      // embed the link inline within the sentence
+      var idx = text.indexOf(a.button_text);
+      banner.appendChild(document.createTextNode(text.slice(0, idx)));
       var link = document.createElement('a');
       link.href = a.button_url;
       link.textContent = a.button_text;
-      link.style.cssText = 'color:#fff;font-weight:700;text-decoration:underline;margin-left:4px;';
+      link.style.cssText = 'color:#fff;font-weight:700;text-decoration:underline;';
       if (/^https?:\/\//i.test(a.button_url)) { link.target = '_blank'; link.rel = 'noopener'; }
-      banner.appendChild(document.createTextNode(' '));
       banner.appendChild(link);
+      banner.appendChild(document.createTextNode(text.slice(idx + a.button_text.length)));
+    } else {
+      // button text not found in message — append it at the end
+      banner.appendChild(document.createTextNode(text));
+      if (a.button_text && a.button_url) {
+        var link = document.createElement('a');
+        link.href = a.button_url;
+        link.textContent = a.button_text;
+        link.style.cssText = 'color:#fff;font-weight:700;text-decoration:underline;margin-left:4px;';
+        if (/^https?:\/\//i.test(a.button_url)) { link.target = '_blank'; link.rel = 'noopener'; }
+        banner.appendChild(document.createTextNode(' '));
+        banner.appendChild(link);
+      }
     }
     var closeBtn = document.createElement('button');
     closeBtn.innerHTML = '&times;';
