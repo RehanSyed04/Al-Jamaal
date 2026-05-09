@@ -280,25 +280,33 @@
 
   <script>var products = [];</script>
   <script src="js/script.js?v=4"></script>
+  <script src="js/products-data.js"></script>
   <script>
+    function renderFeatured(data) {
+      var featuredIds = [1, 2, 50, 10];
+      var featured = featuredIds.map(function(id) {
+        return data.find(function(p) { return p.id === id; });
+      }).filter(Boolean);
+      renderProductGrid('featured-products', featured);
+      initCardSliderTouch(document.getElementById('featured-products'));
+    }
     (async function() {
       try {
         var controller = new AbortController();
-        var timeout = setTimeout(function() { controller.abort(); }, 7000);
+        var timeout = setTimeout(function() { controller.abort(); }, 15000);
         var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products', { signal: controller.signal });
         clearTimeout(timeout);
-        if (!res.ok) return;
+        if (!res.ok) throw new Error();
         var data = await res.json();
-        if (!data || !data.length) return;
+        if (!data || !data.length) throw new Error();
         products.splice(0, products.length, ...data);
-        var categories = ['Men', 'Women', 'Kids', 'Home & Gifts', 'Perfumes'];
-        var featured = categories.map(function(cat) {
-          return products.find(function(p) { return p.category === cat && p.badge !== 'Sold Out'; }) ||
-                 products.find(function(p) { return p.category === cat; });
-        }).filter(Boolean);
-        renderProductGrid('featured-products', featured);
-        initCardSliderTouch(document.getElementById('featured-products'));
-      } catch(e) {}
+        renderFeatured(data);
+      } catch(e) {
+        if (window.productsData && window.productsData.length) {
+          products.splice(0, products.length, ...window.productsData);
+          renderFeatured(window.productsData);
+        }
+      }
     })();
   </script>
 
