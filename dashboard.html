@@ -404,18 +404,6 @@
     </div>
 
     <div class="card" style="margin-top:24px;">
-      <div class="card-title" style="margin-bottom:16px;">Session Timeout</div>
-      <label style="font-size:14px;color:#555;margin-bottom:8px;display:block;">Auto-logout after inactivity:</label>
-      <select id="session-timeout-select" onchange="saveSessionTimeout(this.value)" style="padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;">
-        <option value="5">5 minutes</option>
-        <option value="10">10 minutes</option>
-        <option value="15">15 minutes</option>
-        <option value="20" selected>20 minutes</option>
-      </select>
-      <p style="font-size:13px;color:#888;margin-top:10px;">If you're inactive for this long, you'll be logged out automatically.</p>
-    </div>
-
-    <div class="card" style="margin-top:24px;">
       <div class="card-title" style="margin-bottom:4px;">Featured Products</div>
       <p style="font-size:13px;color:#888;margin:0 0 16px;">These products show on the homepage. Drag to reorder, or use the arrows.</p>
       <div id="featured-list" style="margin-bottom:14px;"></div>
@@ -531,6 +519,18 @@
           <span id="ann-form-status" style="font-size:13px;"></span>
         </div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div class="card-title" style="margin-bottom:16px;">Session Timeout</div>
+      <label style="font-size:14px;color:#555;margin-bottom:8px;display:block;">Auto-logout after inactivity:</label>
+      <select id="session-timeout-select" onchange="saveSessionTimeout(this.value)" style="padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit;">
+        <option value="5">5 minutes</option>
+        <option value="10">10 minutes</option>
+        <option value="15">15 minutes</option>
+        <option value="20" selected>20 minutes</option>
+      </select>
+      <p style="font-size:13px;color:#888;margin-top:10px;">If you're inactive for this long, you'll be logged out automatically.</p>
     </div>
 
   </div>
