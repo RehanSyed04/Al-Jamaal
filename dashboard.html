@@ -1435,14 +1435,21 @@
     }
 
     var html = '';
-    allProducts.forEach(function(product) {
+    allProducts.forEach(function(product, i) {
       var pid = product.id;
       var pStock = allStock[pid] || {};
       var name = product.name;
 
-      html += '<div class="card">';
+      html += '<div class="card" draggable="true" data-index="' + i + '" ' +
+        'ondragstart="dragStart(event,' + i + ')" ' +
+        'ondragover="dragOver(event)" ' +
+        'ondragleave="dragLeave(event)" ' +
+        'ondrop="stockDragDrop(event,' + i + ')">';
       html += '<div class="stock-product-name" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleStockCard(this)">' +
-        '<span>' + name + '</span>' +
+        '<span style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="cursor:grab;color:#bbb;font-size:20px;user-select:none;" title="Drag to reorder">⠿</span>' +
+        name +
+        '</span>' +
         '<span style="font-size:18px;color:#aaa;user-select:none;">&#9660;</span>' +
         '</div>';
       html += '<div class="stock-card-body overview-group-body collapsed">';
@@ -1510,6 +1517,30 @@
     var arrow = header.querySelector('span:last-child');
     body.classList.toggle('collapsed');
     arrow.innerHTML = body.classList.contains('collapsed') ? '&#9660;' : '&#9650;';
+  }
+
+  async function stockDragDrop(e, targetIndex) {
+    e.preventDefault();
+    e.currentTarget.style.borderTop = '';
+    if (dragSrcIndex === null || dragSrcIndex === targetIndex) { dragSrcIndex = null; return; }
+    var fromPos = dragSrcIndex + 1;
+    var toPos = targetIndex + 1;
+    var previousOrder = allProducts.map(function(p) { return p.id; });
+    var moved = allProducts.splice(dragSrcIndex, 1)[0];
+    allProducts.splice(targetIndex, 0, moved);
+    allProducts.forEach(function(p, i) { p.sort_order = i; });
+    dragSrcIndex = null;
+    renderStockList();
+    var ok = await saveSortOrders(moved.name, fromPos, toPos);
+    if (!ok) {
+      var byId = {};
+      allProducts.forEach(function(p) { byId[p.id] = p; });
+      var restored = previousOrder.map(function(id) { return byId[id]; }).filter(Boolean);
+      restored.forEach(function(p, i) { p.sort_order = i; });
+      allProducts.splice(0, allProducts.length, ...restored);
+      renderStockList();
+      alert('Could not save new order — reordering has been undone. Please try again.');
+    }
   }
 
   function qtyCell(qty, pid, stockKey, color) {

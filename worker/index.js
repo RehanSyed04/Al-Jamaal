@@ -29,6 +29,17 @@ function json(data, status = 200) {
   });
 }
 
+function bustProductsCache(ctx, requestUrl) {
+  const base = new URL(requestUrl);
+  base.pathname = '/get-products';
+  base.search = '';
+  const cache = caches.default;
+  ctx.waitUntil(Promise.all([
+    cache.delete(new Request(base.toString())),
+    cache.delete(new Request(base.toString() + '?stock=1'))
+  ]));
+}
+
 function normPhone(p) {
   if (!p) return '';
   const d = p.replace(/\D/g, '');
@@ -292,10 +303,15 @@ export default {
       ).bind(productId).all();
       if (!rows.results || rows.results.length === 0)
         return json({ product_id: productId, stock: null });
-      if (rows.results[0].stock_key === '__simple__')
-        return json({ product_id: productId, stock: rows.results[0].qty });
+      const complexRows = rows.results.filter(r => r.stock_key !== '__simple__');
+      if (complexRows.length === 0) {
+        // Purely simple stock — return total qty
+        const simpleRow = rows.results.find(r => r.stock_key === '__simple__');
+        return json({ product_id: productId, stock: simpleRow ? simpleRow.qty : 0 });
+      }
+      // Has size/colour stock — build map from complex rows only (ignore stale __simple__)
       const stock = {};
-      for (const row of rows.results) {
+      for (const row of complexRows) {
         if (!stock[row.stock_key]) stock[row.stock_key] = {};
         stock[row.stock_key][row.color] = row.qty;
       }
@@ -402,6 +418,7 @@ export default {
           "UPDATE products SET badge = '' WHERE id = ? AND badge = 'Sold Out'"
         ).bind(productId).run();
       }
+      bustProductsCache(ctx, request.url);
       return json({ ok: true });
     }
 
@@ -524,6 +541,7 @@ export default {
       if (includeStock) queries.push(env.DB.prepare('SELECT product_id, stock_key, color, qty FROM stock').all());
       const [productRows, stockResult] = await Promise.all(queries);
       const stockMap = {};
+      const stockHasComplex = {};
       if (includeStock) {
         for (const row of ((stockResult && stockResult.results) || [])) {
           const pid = row.product_id;
@@ -531,9 +549,14 @@ export default {
           if (row.stock_key === '__simple__') {
             stockMap[pid].__simple__ = row.qty;
           } else {
+            stockHasComplex[pid] = true;
             if (!stockMap[pid][row.stock_key]) stockMap[pid][row.stock_key] = {};
             stockMap[pid][row.stock_key][row.color] = row.qty;
           }
+        }
+        // Remove stale __simple__ entries from products that have size/colour stock
+        for (const pid of Object.keys(stockHasComplex)) {
+          delete stockMap[pid].__simple__;
         }
       }
       const products = (productRows.results || []).map(function(r) {
@@ -549,7 +572,7 @@ export default {
         });
       });
 
-      const ttl = includeStock ? 60 : 120; // stock: 1 min; product list: 2 min
+      const ttl = includeStock ? 20 : 20; // 20s TTL — short enough that product changes propagate quickly
       const response = new Response(JSON.stringify(products), {
         headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${ttl}` }
       });
@@ -600,6 +623,7 @@ export default {
           }
         }
       }
+      bustProductsCache(ctx, request.url);
       return json({ ok: true });
     }
 
@@ -611,6 +635,7 @@ export default {
       if (!b.id) return json({ error: 'id required' }, 400);
       await env.DB.prepare('UPDATE products SET hidden = ? WHERE id = ?')
         .bind(b.hidden ? 1 : 0, b.id).run();
+      bustProductsCache(ctx, request.url);
       return json({ ok: true });
     }
 
@@ -623,6 +648,15 @@ export default {
         await env.DB.prepare('UPDATE products SET sort_order = ? WHERE id = ?')
           .bind(item.sort_order, item.id).run();
       }
+      // Bust edge cache so reorder reflects immediately
+      const cache = caches.default;
+      const base = new URL(request.url);
+      base.pathname = '/get-products';
+      base.search = '';
+      ctx.waitUntil(Promise.all([
+        cache.delete(new Request(base.toString())),
+        cache.delete(new Request(base.toString() + '?stock=1'))
+      ]));
       return json({ ok: true });
     }
 
