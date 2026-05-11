@@ -181,7 +181,11 @@
           <address>
             <a href="mailto:aljamaalcustomersupport@gmail.com" style="color:#888;">aljamaalcustomersupport@gmail.com</a><br><br>
             <a href="https://wa.me/27603023555" style="color:#888;">WhatsApp: +27 60 302 3555</a><br><br>
-            <a href="https://www.instagram.com/aljamaal_official/" target="_blank" style="color:#888;">Instagram: @aljamaal_official</a>
+            <a href="https://www.instagram.com/aljamaal_official/" target="_blank" style="color:#888;">Instagram: @aljamaal_official</a><br><br>
+            <span style="color:#888;font-size:13px;">Store Hours<br>
+            Mon–Thu: 9–12:15pm &amp; 2–4pm<br>
+            Fri: 9–11am &amp; 2–4pm<br>
+            Sat: 9am–12pm &nbsp;·&nbsp; Sun: Closed</span>
           </address>
         </div>
       </div>
@@ -550,6 +554,34 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         var data = await res.json();
         product.stock = (data.stock === null || data.stock === undefined) ? 0 : data.stock;
+
+        // If the page rendered a "Sold Out" button (no #add-to-cart-btn) but live stock
+        // shows units available, the initial cached data was stale — restore the button.
+        if (!document.getElementById('add-to-cart-btn')) {
+          var totalStock = typeof product.stock === 'number' ? product.stock :
+            Object.values(product.stock).reduce(function(sum, sizeEntry) {
+              if (typeof sizeEntry === 'object') {
+                return sum + Object.values(sizeEntry).reduce(function(s, q) { return s + q; }, 0);
+              }
+              return sum + sizeEntry;
+            }, 0);
+          if (totalStock > 0) {
+            product.badge = '';
+            var actionsEl = document.querySelector('.product-detail-actions');
+            if (actionsEl) {
+              actionsEl.innerHTML =
+                '<button id="add-to-cart-btn" class="btn btn-primary" style="flex:1;" onclick="addDetailToCart()">Add to Cart</button>' +
+                '<a href="cart.html" class="btn btn-dark" style="flex:1;text-align:center;">View Cart</a>';
+            }
+            var metaPs = document.querySelectorAll('.product-detail-meta p');
+            metaPs.forEach(function(p) {
+              if (p.textContent.indexOf('Availability') !== -1) {
+                p.innerHTML = '<strong>Availability:</strong> In Stock';
+              }
+            });
+          }
+        }
+
         updateStockUI();
       } catch (err) {
         console.warn('Live stock fetch failed, using static data:', err.message);

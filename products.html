@@ -142,7 +142,11 @@
           <address>
             <a href="mailto:aljamaalcustomersupport@gmail.com" style="color:#888;">aljamaalcustomersupport@gmail.com</a><br><br>
             <a href="https://wa.me/27603023555" style="color:#888;">WhatsApp: +27 60 302 3555</a><br><br>
-            <a href="https://www.instagram.com/aljamaal_official/" target="_blank" style="color:#888;">Instagram: @aljamaal_official</a>
+            <a href="https://www.instagram.com/aljamaal_official/" target="_blank" style="color:#888;">Instagram: @aljamaal_official</a><br><br>
+            <span style="color:#888;font-size:13px;">Store Hours<br>
+            Mon–Thu: 9–12:15pm &amp; 2–4pm<br>
+            Fri: 9–11am &amp; 2–4pm<br>
+            Sat: 9am–12pm &nbsp;·&nbsp; Sun: Closed</span>
           </address>
         </div>
       </div>
@@ -155,6 +159,7 @@
 
   <script>var products = []; window._productsLoading = true;</script>
   <script src="js/script.js?v=4"></script>
+  <script src="js/products-data.js"></script>
   <script>
     document.getElementById('product-sort').addEventListener('change', applyProductFilters);
 
@@ -173,17 +178,27 @@
     async function loadProducts() {
       try {
         var controller = new AbortController();
-        var timeout = setTimeout(function() { controller.abort(); }, 7000);
+        var timeout = setTimeout(function() { controller.abort(); }, 15000);
         var res = await fetch('https://aljamaal-shipping.syedsarmiento.workers.dev/get-products', { signal: controller.signal });
         clearTimeout(timeout);
         if (!res.ok) { showProductsError(); return; }
         var data = await res.json();
-        if (!data || !data.length) { showProductsError(); return; }
+        if (!data || !data.length) { useFallback(); return; }
         products.splice(0, products.length, ...data);
         window._productsLoading = false;
         applyProductFilters();
       } catch(e) {
         window._productsLoading = false;
+        useFallback();
+      }
+    }
+
+    function useFallback() {
+      if (window.productsData && window.productsData.length) {
+        products.splice(0, products.length, ...window.productsData);
+        window._productsLoading = false;
+        applyProductFilters();
+      } else {
         showProductsError();
       }
     }
