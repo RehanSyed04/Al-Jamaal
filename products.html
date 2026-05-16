@@ -164,7 +164,6 @@
     document.getElementById('product-sort').addEventListener('change', applyProductFilters);
 
     var _productsGrid = document.getElementById('products-grid');
-    if (_productsGrid) _productsGrid.innerHTML = '<p style="text-align:center;color:#888;padding:40px 0;font-size:15px;">Loading products...</p>';
 
     function showProductsError() {
       var grid = document.getElementById('products-grid');
@@ -210,6 +209,7 @@
       loadProducts();
     }
 
+    useFallback();
     loadProducts();
   </script>
 
